@@ -60,13 +60,23 @@ struct Pipeline {
         glDeleteShader(vertex_shader);
         glDeleteShader(fragment_shader);
     }
+    
+    void create_framebuffer() {
+        // create frame buffer for shadow mapping pipeline
+        glCreateFramebuffers(1, &_framebuffer);
+        // attach texture to frame buffer (only draw to depth, no color output -> GL_NONE)
+        glNamedFramebufferReadBuffer(_framebuffer, GL_NONE);
+        glNamedFramebufferDrawBuffer(_framebuffer, GL_NONE);
+    }
     // clean up shader program object
     void destroy() {
         glDeleteProgram(_shader_program);
     }
     // bind the shader program (needs to be done before binding meshes or uniforms)
     void bind() {
+        glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
         glUseProgram(_shader_program);
     }
     GLuint _shader_program;
+    GLuint _framebuffer = 0;
 };
