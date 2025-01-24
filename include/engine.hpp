@@ -42,6 +42,7 @@ struct Engine {
         */
         // create renderable models
         _player.init("../assets/models/Shark.obj");
+        _player._transform._scale = glm::vec3(0.5f);
 
         // create spheres to represent the lights
                 for (auto& light: _lights) {
@@ -98,55 +99,62 @@ struct Engine {
         return SDL_AppResult::SDL_APP_CONTINUE;   
     }
 
-    void execute_input() {
-        // Dimensiones de la ventana (ajústalas según tu motor)
-        float windowWidth = 1280.0f;
-        float windowHeight = 720.0f;
-        
-        // get mouse position
-        auto [mouseX, mouseY] = Mouse::position();
+void execute_input() {
+    // Move player
+    float speed = 0.08f;
+    if (Keys::down(SDLK_W)) _player._transform._position.z += speed;
+    if (Keys::down(SDLK_S)) _player._transform._position.z -= speed;
+    if (Keys::down(SDLK_A)) _player._transform._position.x += speed;
+    if (Keys::down(SDLK_D)) _player._transform._position.x -= speed;
 
-        // Normalizar las coordenadas del mouse
-        float normalizedX = (2.0f * mouseX) / windowWidth - 1.0f;
-        float normalizedY = 1.0f - (2.0f * mouseY) / windowHeight;
-        glm::vec4 clipSpacePos(normalizedX, normalizedY, -1.0f, 1.0f);
+    // Update camera position and rotation
+    glm::vec3 offset(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
+    glm::vec3 rotation(-glm::radians(90.0f), glm::radians(180.0f), 0.0f);
+    _camera._position = _player._transform._position + offset;
+    _camera._rotation = rotation;
 
-        // Convertir al espacio de cámara
-        glm::mat4 invProjection = glm::inverse(_camera._projection_mat);
-        glm::vec4 cameraSpacePos = invProjection * clipSpacePos;
-        cameraSpacePos /= cameraSpacePos.w;
+    // Window dimensions
+    float windowWidth = 1280.0f;
+    float windowHeight = 720.0f;
 
-        // Convertir al espacio mundial
-        glm::mat4 viewMat(1.0f);
-        viewMat = glm::rotate(viewMat, -_camera._rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        viewMat = glm::rotate(viewMat, -_camera._rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        viewMat = glm::translate(viewMat, -_camera._position);
-        glm::mat4 invView = glm::inverse(viewMat);
+    // Mouse position
+    auto [mouseX, mouseY] = Mouse::position();
 
-        glm::vec4 worldSpacePos = invView * cameraSpacePos;
+    // Normalize mouse coordinates
+    float normalizedX = (2.0f * mouseX) / windowWidth - 1.0f;
+    float normalizedY = 1.0f - (2.0f * mouseY) / windowHeight;
+    glm::vec4 clipSpacePos(normalizedX, normalizedY, -1.0f, 1.0f);
 
-        // Calcular la dirección y el ángulo hacia el mouse
-        glm::vec3 direction = glm::normalize(glm::vec3(worldSpacePos) - _player._transform._position);
-        float angle = std::atan2(direction.y, direction.x);
-        if (angle < 0) angle += glm::two_pi<float>(); // Asegurar rango [0, 2π]
-        _player._transform._rotation.z = angle;
+    // Convert to camera space
+    glm::mat4 invProjection = glm::inverse(_camera._projection_mat);
+    glm::vec4 cameraSpacePos = invProjection * clipSpacePos;
+    cameraSpacePos /= cameraSpacePos.w;
 
-        // move player
-        float speed = 0.08f;
-        if (Keys::down(SDLK_W)) _player._transform._position.y += speed;
-        if (Keys::down(SDLK_S)) _player._transform._position.y -= speed;
-        if (Keys::down(SDLK_A)) _player._transform._position.x -= speed;
-        if (Keys::down(SDLK_D)) _player._transform._position.x += speed;
-        float rotationSpeed = 0.005f;
-        // _camera._rotation.x -= rotationSpeed * Mouse::delta().second;
-        // _camera._rotation.y -= rotationSpeed * Mouse::delta().first;
-        // Hacer que la cámara siga al cubo
-         // Offset para que la cámara esté detrás y arriba
-        glm::vec3 offset(0.0f, 0.0f, 10.0f);
-        _camera._position = _player._transform._position + offset;
-        // let input system process input
-        Input::flush();
-    }
+    // Convert to world space
+    glm::mat4 viewMat(1.0f);
+    viewMat = glm::rotate(viewMat, -_camera._rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+    viewMat = glm::rotate(viewMat, -_camera._rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+    viewMat = glm::translate(viewMat, -_camera._position);
+    glm::mat4 invView = glm::inverse(viewMat);
+
+    glm::vec4 worldSpacePos = invView * cameraSpacePos;
+
+    // Calculate direction and angle
+    glm::vec3 direction = glm::normalize(
+        glm::vec3(worldSpacePos.x - offset.x, 0.0f, worldSpacePos.z) - 
+        glm::vec3(_player._transform._position.x, 0.0f, _player._transform._position.z)
+    );
+
+    float angle = std::atan2(direction.x, direction.z);
+
+    if (angle < 0) angle += glm::two_pi<float>(); // Ensure range [0, 2π]
+    _player._transform._rotation.y = angle;
+
+    // Process input
+    Input::flush();
+}
+
+
 
     void execute_frame() {
         // update time for accurate Time:get_delta()
