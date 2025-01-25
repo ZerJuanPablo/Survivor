@@ -1,14 +1,26 @@
 #pragma once
-#include <cstdint>
+#include <glm/glm.hpp> // Asumiendo que usas glm para manejar colores y vectores
 
 struct Material {
     void bind() {
+        // Textura
         glUniform1f(17, _texture_contribution);
+
+        // Propiedades de iluminación
         glUniform1f(18, _specular);
         glUniform1f(19, _specular_shininess);
+
+        // Colores del material
+        glUniform3fv(20, 1, &_ambient[0]);   // Uniform para Ka (ambient)
+        glUniform3fv(21, 1, &_diffuse[0]);   // Uniform para Kd (diffuse)
+        glUniform3fv(22, 1, &_specularColor[0]); // Uniform para Ks (specular)
     }
 
-    float _texture_contribution = 0;
-    float _specular = 1;
-    float _specular_shininess = 32;
+    float _texture_contribution = 0;           // Contribución de la textura
+    float _specular = 1;                       // Factor especular
+    float _specular_shininess = 32;            // Brillo especular (Ns)
+
+    glm::vec3 _ambient = glm::vec3(0.1f);      // Color ambiental (Ka)
+    glm::vec3 _diffuse = glm::vec3(0.8f);      // Color difuso (Kd)
+    glm::vec3 _specularColor = glm::vec3(1.0f); // Color especular (Ks)
 };

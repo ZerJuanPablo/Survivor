@@ -30,8 +30,8 @@ struct Engine {
         _pipeline_shadows.create_framebuffer();
 
         // create light and its shadow map
-        _lights[0].init({+1.0, +3.0, -0.5}, {.992, .984, .827}, 100);
-        _lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
+        _lights[0].init({0.0, 2.0, 0.0}, {3.0, 3.0, 3.0}, 600);
+        //_lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
         
 
         /*_mesh.init();
@@ -41,14 +41,8 @@ struct Engine {
         _transform_color._position.z -= 5.0f;
         */
         // create renderable models
-        _player.init("../assets/models/Shark.obj");
+        _player.init("../assets/models/Goldfish.obj");
         _player._transform._scale = glm::vec3(0.5f);
-
-        // create spheres to represent the lights
-                for (auto& light: _lights) {
-            _models.emplace_back().init(Mesh::eSphere);
-            _models.back()._transform._position = light._position;
-        }
 
         // audio stuff
 
@@ -99,7 +93,7 @@ struct Engine {
         return SDL_AppResult::SDL_APP_CONTINUE;   
     }
 
-void execute_input() {
+    void execute_input() {
     // Move player
     float speed = 0.08f;
     if (Keys::down(SDLK_W)) _player._transform._position.z += speed;
@@ -112,7 +106,7 @@ void execute_input() {
     glm::vec3 rotation(-glm::radians(90.0f), glm::radians(180.0f), 0.0f);
     _camera._position = _player._transform._position + offset;
     _camera._rotation = rotation;
-
+    _lights[0]._position = _player._transform._position + glm::vec3(0.0f, 2.0f, 0.0f);
     // Window dimensions
     float windowWidth = 1280.0f;
     float windowHeight = 720.0f;
@@ -153,7 +147,6 @@ void execute_input() {
     // Process input
     Input::flush();
 }
-
 
 
     void execute_frame() {
@@ -197,7 +190,7 @@ void execute_input() {
             _pipeline.bind();
             glViewport(0, 0, 1280, 720);
             // clear screen before drawing
-            glClearColor(0.1, 0.1, 0.1, 0.0);
+            glClearColor(0.08627451f, 0.19607843f, 0.35686275f, 1.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // bind lights and their shadow maps
             for (int i = 0; i < _lights.size(); i++) {
@@ -221,7 +214,7 @@ void execute_input() {
     Camera _camera;
     Pipeline _pipeline;
     Pipeline _pipeline_shadows;
-    std::array<Light, 2> _lights;
+    std::array<Light, 1> _lights;
     std::vector<Model> _models;
     Model _player;                // Referencia al modelo principal
 

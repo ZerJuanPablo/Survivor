@@ -62,10 +62,35 @@ struct Model {
             material_p->Get(AI_MATKEY_SHININESS_STRENGTH, material._specular_shininess);
 
             // load lighting colors
+            // Cargar colores del material
             aiColor3D color;
-            material_p->Get(AI_MATKEY_COLOR_AMBIENT, color);
-            material_p->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-            material_p->Get(AI_MATKEY_COLOR_SPECULAR, color);
+
+            // Ka (Color Ambiental)
+            if (material_p->Get(AI_MATKEY_COLOR_AMBIENT, color) == AI_SUCCESS) {
+                material._ambient = glm::vec3(color.r, color.g, color.b); // Asume que `Material` usa glm::vec3
+            } else {
+                material._ambient = glm::vec3(0.1f); // Valor predeterminado si no se encuentra
+            }
+
+            // Kd (Color Difuso)
+            if (material_p->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
+                material._diffuse = glm::vec3(color.r, color.g, color.b);
+            } else {
+                material._diffuse = glm::vec3(0.8f); // Valor predeterminado
+            }
+
+            // Ks (Color Especular)
+            if (material_p->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS) {
+                material._specularColor = glm::vec3(color.r, color.g, color.b);
+            } else {
+                material._specularColor = glm::vec3(1.0f); // Valor predeterminado
+            }
+
+            // Ns (Shininess)
+            if (material_p->Get(AI_MATKEY_SHININESS, material._specular_shininess) != AI_SUCCESS) {
+                material._specular_shininess = 32.0f; // Valor predeterminado
+            }
+
 
             // see if this should use a diffuse texture
             if (material_p->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
@@ -76,6 +101,8 @@ struct Model {
                 std::string full_texture_path = model_root;
                 full_texture_path.append(texture_path.C_Str());
                 _textures[i].init(full_texture_path.c_str());
+            } else {
+                material._texture_contribution = 0.0;
             }
         }
         
@@ -94,18 +121,21 @@ struct Model {
             mesh.destroy();
         }
     }
-    void draw(bool color = true) {
-        _transform.bind();
-        for (uint32_t i = 0; i < _meshes.size(); i++) {
-            // only bind textures and materials if color is drawn
-            uint32_t material_index = _meshes[i]._material_index;
-            if (material_index < _textures.size()) {
-                _textures[material_index].bind();
-            }
-            _materials[material_index].bind();
-            _meshes[i].draw();
+void draw(bool color = true) {
+    _transform.bind();
+    for (uint32_t i = 0; i < _meshes.size(); i++) {
+        // Obtén el índice del material asociado con la malla
+        uint32_t material_index = _meshes[i]._material_index;
+
+        if (material_index < _textures.size() && color) {
+            _textures[material_index].bind(); // Enlaza la textura (si aplica)
         }
+        _materials[material_index].bind();   // Enlaza el material
+
+        _meshes[i].draw();                   // Dibuja la malla
     }
+}
+
 
     std::vector<Mesh> _meshes;
     std::vector<Material> _materials;
