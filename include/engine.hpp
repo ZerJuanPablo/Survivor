@@ -16,14 +16,19 @@ using namespace gl46core;
 #include "entities/camera.hpp"
 #include "entities/model.hpp"
 #include "entities/light.hpp"
+#include "entities/player.hpp"
 
 struct Engine {
 
     void init() {
         Time::init();
-        _window.init(1280, 720, "OpenGL Renderer");
-        _camera.set_perspective(1280, 720, 70);
-        
+
+        _window.init(width, height, "OpenGL Renderer");
+        _camera.set_perspective(width, height, 70);
+        glm::vec3 rotation(-glm::radians(90.0f), glm::radians(180.0f), 0.0f);
+        _camera._rotation = rotation;
+
+
         // create pipeline for textured objects
         _pipeline.init("../assets/shaders/default.vert", "../assets/shaders/default.frag");
         _pipeline_shadows.init("../assets/shaders/shadows.vert", "../assets/shaders/shadows.frag");
@@ -42,7 +47,11 @@ struct Engine {
         */
         // create renderable models
         _player.init("../assets/models/Goldfish.obj");
-        _player._transform._scale = glm::vec3(0.5f);
+        _player._model._transform._scale = glm::vec3(0.5f);
+
+        // create renderable models
+        _models.emplace_back().init(Mesh::eCube);
+        
 
         // audio stuff
 
@@ -94,55 +103,23 @@ struct Engine {
     }
 
     void execute_input() {
-    // Move player
-    float speed = 0.08f;
-    if (Keys::down(SDLK_W)) _player._transform._position.z += speed;
-    if (Keys::down(SDLK_S)) _player._transform._position.z -= speed;
-    if (Keys::down(SDLK_A)) _player._transform._position.x += speed;
-    if (Keys::down(SDLK_D)) _player._transform._position.x -= speed;
-
+    float delta_time = Time::get_delta();
+    
     // Update camera position and rotation
-    glm::vec3 offset(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
-    glm::vec3 rotation(-glm::radians(90.0f), glm::radians(180.0f), 0.0f);
-    _camera._position = _player._transform._position + offset;
-    _camera._rotation = rotation;
-    _lights[0]._position = _player._transform._position + glm::vec3(0.0f, 2.0f, 0.0f);
-    // Window dimensions
-    float windowWidth = 1280.0f;
-    float windowHeight = 720.0f;
+    glm::mat4 inv_view = glm::inverse(_camera.get_view_matrix());
 
-    // Mouse position
-    auto [mouseX, mouseY] = Mouse::position();
-
-    // Normalize mouse coordinates
-    float normalizedX = (2.0f * mouseX) / windowWidth - 1.0f;
-    float normalizedY = 1.0f - (2.0f * mouseY) / windowHeight;
-    glm::vec4 clipSpacePos(normalizedX, normalizedY, -1.0f, 1.0f);
-
-    // Convert to camera space
-    glm::mat4 invProjection = glm::inverse(_camera._projection_mat);
-    glm::vec4 cameraSpacePos = invProjection * clipSpacePos;
-    cameraSpacePos /= cameraSpacePos.w;
-
-    // Convert to world space
-    glm::mat4 viewMat(1.0f);
-    viewMat = glm::rotate(viewMat, -_camera._rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-    viewMat = glm::rotate(viewMat, -_camera._rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-    viewMat = glm::translate(viewMat, -_camera._position);
-    glm::mat4 invView = glm::inverse(viewMat);
-
-    glm::vec4 worldSpacePos = invView * cameraSpacePos;
-
-    // Calculate direction and angle
-    glm::vec3 direction = glm::normalize(
-        glm::vec3(worldSpacePos.x - offset.x, 0.0f, worldSpacePos.z) - 
-        glm::vec3(_player._transform._position.x, 0.0f, _player._transform._position.z)
+    _player.update(
+        delta_time,
+        width, height,
+        _camera._projection_mat,
+        inv_view
     );
 
-    float angle = std::atan2(direction.x, direction.z);
-
-    if (angle < 0) angle += glm::two_pi<float>(); // Ensure range [0, 2π]
-    _player._transform._rotation.y = angle;
+    glm::vec3 offset(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
+    _camera._position = _player.get_position() + offset;
+    _lights[0]._position = _player.get_position() + glm::vec3(0.0f, 2.0f, 0.0f);
+    
+    //_player._model.look_at(_models[0]._transform._position);
 
     // Process input
     Input::flush();
@@ -216,11 +193,14 @@ struct Engine {
     Pipeline _pipeline_shadows;
     std::array<Light, 1> _lights;
     std::vector<Model> _models;
-    Model _player;                // Referencia al modelo principal
+    Player _player;
+    
 
     // other
     bool _shadows_dirty = true;
     bool _mouse_captured = false;
+    int width = 1280;
+    int height = 720;
 
     // audio 
     struct AudioFile {

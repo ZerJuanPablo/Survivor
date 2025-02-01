@@ -20,3 +20,5 @@ Thumbs.db
 .idea/
 /bin
 /bin
+bin/opengl-renderer.pdb
+bin/opengl-renderer.exe

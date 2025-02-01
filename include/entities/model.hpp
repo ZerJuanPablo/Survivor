@@ -134,7 +134,16 @@ void draw(bool color = true) {
 
         _meshes[i].draw();                   // Dibuja la malla
     }
-}
+    }
+
+    void look_at(const glm::vec3& target_position) {
+        glm::vec3 direction = glm::normalize(target_position - _transform._position);
+        float angle = std::atan2(direction.x, direction.z);
+
+        if (angle < 0) angle += glm::two_pi<float>();
+
+        _transform._rotation.y = angle;
+    }
 
 
     std::vector<Mesh> _meshes;
