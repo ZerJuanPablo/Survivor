@@ -121,6 +121,7 @@ struct Model {
             mesh.destroy();
         }
     }
+            
 void draw(bool color = true) {
     _transform.bind();
     for (uint32_t i = 0; i < _meshes.size(); i++) {

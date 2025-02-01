@@ -11,7 +11,6 @@ struct Player {
 public:
     void init(const std::string& model_path, const glm::vec3& center_offset = glm::vec3(0.0f)) {
         _model.init(model_path);
-        _model._transform._scale = glm::vec3(0.5f);
         _center_offset = center_offset;  // Ajustar manualmente si es necesario
     }
 
@@ -24,7 +23,7 @@ public:
         update_rotation(window_width, window_height, glm::inverse(projection_mat), inv_view_mat);
     }
 
-    void draw(bool bind_material = true) {
+    void draw(bool bind_material = false) {
         _model.draw(bind_material);
     }
 
@@ -56,6 +55,8 @@ public:
     int _xp = 0;
     int _level = 1;
     float _xp_needed = 100.0f;
+    float _xp_multiplier = 1.0f;
+    float _radius;
     Model _model;
     glm::vec3 _center_offset = glm::vec3(0.0f); // Desplazamiento del centro
 

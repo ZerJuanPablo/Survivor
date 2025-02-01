@@ -17,6 +17,7 @@ using namespace gl46core;
 #include "entities/model.hpp"
 #include "entities/light.hpp"
 #include "entities/player.hpp"
+#include "entities/enemy.hpp"
 
 struct Engine {
 
@@ -49,6 +50,8 @@ struct Engine {
         _player.init("../assets/models/Goldfish.obj");
         _player._model._transform._scale = glm::vec3(0.5f);
 
+        _enemy.init("../assets/models/Shark.obj", _player.get_position());
+        _enemy._model._transform._position = glm::vec3(3.0f, 0.0f, 2.0f);
         // create renderable models
         _models.emplace_back().init(Mesh::eCube);
         
@@ -72,6 +75,7 @@ struct Engine {
         ImGui_ImplSDL3_InitForOpenGL(_window._window_p, _window._context);
         ImGui_ImplOpenGL3_Init("#version 460 core");
     }
+    
     void destroy() {
         // destroy audio stuff
         SDL_DestroyAudioStream (audio_stream);
@@ -81,6 +85,7 @@ struct Engine {
         for (auto& light: _lights) light.destroy();
         for (auto& model: _models) model.destroy();
         _player.destroy();
+        _enemy.destroy();
         _pipeline.destroy();
         _window.destroy();
         
@@ -89,6 +94,7 @@ struct Engine {
         ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
     }
+    
     auto execute_event(SDL_Event* event_p) -> SDL_AppResult {
         
         ImGui_ImplSDL3_ProcessEvent(event_p); // Forward your event to backend
@@ -115,7 +121,7 @@ struct Engine {
         inv_view
     );
 
-    glm::vec3 offset(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
+    // _enemy.update(delta_time, _player.get_position());
     _camera._position = _player.get_position() + offset;
     _lights[0]._position = _player.get_position() + glm::vec3(0.0f, 2.0f, 0.0f);
     
@@ -124,7 +130,6 @@ struct Engine {
     // Process input
     Input::flush();
 }
-
 
     void execute_frame() {
         // update time for accurate Time:get_delta()
@@ -141,6 +146,7 @@ struct Engine {
 
         // update input
         execute_input();
+        _enemy.update(Time::get_delta(), _player.get_position());
 
         // draw shadows
         if (_shadows_dirty) {
@@ -156,6 +162,7 @@ struct Engine {
                     // draw the stuff
                     for (auto& model: _models) model.draw(false);
                     _player.draw(false);
+                    _enemy.draw(false);
                 }
             }
             _shadows_dirty = false;
@@ -177,6 +184,7 @@ struct Engine {
             // draw the stuff
             for (auto& model: _models) model.draw(false);
             _player.draw(false);
+            _enemy.draw(false);
         }
         
         // present to the screen
@@ -194,6 +202,8 @@ struct Engine {
     std::array<Light, 1> _lights;
     std::vector<Model> _models;
     Player _player;
+    Enemy _enemy;
+    glm::vec3 offset = glm::vec3(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
     
 
     // other
