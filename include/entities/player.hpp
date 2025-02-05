@@ -43,8 +43,16 @@ public:
         return _model._transform._position + _center_offset;  // Devolvemos la posición corregida
     }
 
+    void take_damage(float damage) {
+        _hp -= damage;
+        if (_hp < 0) _hp = 0;
+    }
+
+    float get_radius() const { return 1.0f; } // Ajusta según tu modelo real
+
     float _move_speed = 5.0f;
     int _hp = 100;
+    int _max_hp = 100;
     float _attack_speed = 1.0f;
     float _damage = 10.0f;
     int _piercing_strength = 1;
@@ -54,9 +62,8 @@ public:
     int _bullet_type = 0;
     int _xp = 0;
     int _level = 1;
-    float _xp_needed = 100.0f;
+    int _xp_needed = 100.0f;
     float _xp_multiplier = 1.0f;
-    float _radius;
     Model _model;
     glm::vec3 _center_offset = glm::vec3(0.0f); // Desplazamiento del centro
 
@@ -70,6 +77,10 @@ private:
         if (Keys::down(SDLK_A)) movement.x += 1.0f;
         if (Keys::down(SDLK_D)) movement.x -= 1.0f;
         
+        if (Keys::pressed(SDLK_Q)) _hp -= 2; // Debugging
+        if (Keys::pressed(SDLK_E)) _xp += 2; // Debugging
+
+
         if (glm::length(movement) > 0) {
             movement = glm::normalize(movement);
             _model._transform._position += movement * _move_speed * delta_time;
