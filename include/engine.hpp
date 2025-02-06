@@ -19,6 +19,14 @@ using namespace gl46core;
 #include "entities/player.hpp"
 #include "entities/enemy.hpp"
 #include "uiManager.hpp"
+#include "pipeline2.hpp"
+#include <random>
+
+/*
+Lo último que hice:
+Estaba haciendo Instancing de enemigos/balas, pero no funciona. Al parecer el objeto sí existe, pero no es visible.
+Si se espera lo suficiente, el objeto hace contacto con el jugador y hace daño, pero no se ve.
+*/
 
 struct Engine {
 
@@ -33,6 +41,7 @@ struct Engine {
 
         // create pipeline for textured objects
         _pipeline.init("../assets/shaders/default.vert", "../assets/shaders/default.frag");
+        _pipeline2.init("../assets/shaders/instancing.vert", "../assets/shaders/instancing.frag", true);
         _pipeline_shadows.init("../assets/shaders/shadows.vert", "../assets/shaders/shadows.frag");
         _pipeline_shadows.create_framebuffer();
 
@@ -56,9 +65,18 @@ struct Engine {
         // TO DO: WALLS
 
 
+
+
         // create initial enemies
-        _enemies.emplace_back().init("../assets/models/Shark.obj");
-        _enemies[0]._model._transform._position = glm::vec3(3.0f, 0.0f, 3.0f);  
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dist_x(-10.0f, 10.0f);
+        std::uniform_real_distribution<float> dist_z(-10.0f, 10.0f);
+        
+        for (int i = 0; i < 10; i++) {
+            _enemies.emplace_back().init("../assets/models/Shark.obj");
+            _enemies[i]._model._transform._position = glm::vec3(dist_x(gen), 0.0f, dist_z(gen));  
+        }
         // create cube in center of scene
 
         // to delete enemies:
@@ -141,6 +159,23 @@ struct Engine {
             return enemy._state == Enemy::State::DEAD;
         });
 
+        if (!_enemies.empty()) {
+            _pipeline2.bind();
+            std::vector<glm::mat4> enemy_transforms;
+            enemy_transforms.reserve(_enemies.size());
+
+            for (const auto& enemy : _enemies) {
+                enemy_transforms.push_back(enemy._model._transform.get_matrix());
+            }
+
+            _pipeline2.update_instance_data(enemy_transforms);
+
+            for (const auto& mesh : _enemies[0]._model._meshes) {
+                _pipeline2.draw(mesh._vertex_array_object, mesh._index_count, _enemies.size());
+            }
+        }
+        
+
         // draw shadows
         if (_shadows_dirty) {
             // do this for each light
@@ -177,7 +212,7 @@ struct Engine {
             // draw the stuff
             for (auto& model: _models) model.draw(false);
             _player.draw(false);
-            for (auto& enemy: _enemies) enemy.draw(false);
+
         }
         
         // present to the screen
@@ -191,6 +226,7 @@ struct Engine {
     Camera _camera;
     Pipeline _pipeline;
     Pipeline _pipeline_shadows;
+    Pipeline2 _pipeline2;
     std::array<Light, 1> _lights;
     std::vector<Model> _models;
     Player _player;
