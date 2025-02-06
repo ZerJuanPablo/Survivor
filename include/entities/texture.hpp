@@ -23,7 +23,7 @@ struct Texture {
         glTextureParameteri(_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // interpolation mode when scaling image up
         // generate mipmap textures
         glGenerateTextureMipmap(_texture);
-    }
+    } 
     void destroy() {
         glDeleteTextures(1, &_texture);
     }

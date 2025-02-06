@@ -63,11 +63,12 @@ private:
         const float bar_width = 1000.0f;
         const float bar_height = 20.0f;
         
-        ImGui::SetNextWindowPos(ImVec2(
-            (window_width - bar_width) * 0.5f,
-            20
-        ), ImGuiCond_Always);
-        
+        ImVec2 window_pos = ImVec2((window_width - bar_width) * 0.5f, 20);
+        ImVec2 window_size = ImVec2(bar_width, bar_height);  
+
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(window_size);
+
         ImGui::Begin("HealthBar", nullptr, 
             ImGuiWindowFlags_NoBackground | 
             ImGuiWindowFlags_NoDecoration |
@@ -76,18 +77,27 @@ private:
             ImGuiWindowFlags_NoSavedSettings);
         
         float hp_percent = static_cast<float>(player._hp) / player._max_hp;
+        char overlay[32];
+        snprintf(overlay, sizeof(overlay), "HP: %d/%d", player._hp, player._max_hp);
+
+        // Obtener posición de la barra
+        ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+        ImVec2 bar_size = ImVec2(bar_width, bar_height);
+        
+        // Dibujar barra de progreso
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
-        ImGui::ProgressBar(hp_percent, ImVec2(bar_width, bar_height), "");
+        ImGui::ProgressBar(hp_percent, bar_size, ""); // Sin texto para evitar doble overlay
         ImGui::PopStyleColor();
-        
-        // Texto centrado
-        ImVec2 text_size = ImGui::CalcTextSize("HP: 9999/9999");
-        ImGui::SetCursorPos(ImVec2(
-            (bar_width - text_size.x) * 0.5f,
-            (bar_height - text_size.y) * 0.5f
-        ));
-        ImGui::Text("HP: %d/%d", player._hp, player._max_hp);
-        
+
+        // Dibujar texto centrado en la barra
+        ImVec2 text_size = ImGui::CalcTextSize(overlay);
+        ImVec2 text_pos = ImVec2(
+            cursor_pos.x + (bar_size.x - text_size.x) * 0.5f, // Centrar horizontalmente
+            cursor_pos.y + (bar_size.y - text_size.y) * 0.5f  // Centrar verticalmente
+        );
+
+        ImGui::GetWindowDrawList()->AddText(text_pos, IM_COL32(255, 255, 255, 255), overlay);
+
         ImGui::End();
     }
 
@@ -95,11 +105,12 @@ private:
         const float bar_width = 1000.0f;
         const float bar_height = 20.0f;
         
-        ImGui::SetNextWindowPos(ImVec2(
-            (window_width - bar_width) * 0.5f,
-            50  // 20 (health bar) + 30 (height) + 10 (spacing)
-        ), ImGuiCond_Always);
-        
+        ImVec2 window_pos = ImVec2((window_width - bar_width) * 0.5f, 50);
+        ImVec2 window_size = ImVec2(bar_width, bar_height);
+
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(window_size);
+
         ImGui::Begin("XPBar", nullptr, 
             ImGuiWindowFlags_NoBackground | 
             ImGuiWindowFlags_NoDecoration |
@@ -108,18 +119,28 @@ private:
             ImGuiWindowFlags_NoSavedSettings);
         
         float xp_percent = static_cast<float>(player._xp) / player._xp_needed;
+        char overlay[32];
+        snprintf(overlay, sizeof(overlay), "XP: %d/%d", player._xp, player._xp_needed);
+
+        // Obtener posición de la barra
+        ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+        ImVec2 bar_size = ImVec2(bar_width, bar_height);
+        
+        // Dibujar barra de progreso
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.1f, 0.3f, 0.8f, 1.0f));
-        ImGui::ProgressBar(xp_percent, ImVec2(bar_width, bar_height), "");
+        ImGui::ProgressBar(xp_percent, bar_size, ""); // Sin texto para evitar doble overlay
         ImGui::PopStyleColor();
-        
-        // Texto centrado
-        ImVec2 text_size = ImGui::CalcTextSize("XP: 9999/9999");
-        ImGui::SetCursorPos(ImVec2(
-            (bar_width - text_size.x) * 0.5f,
-            (bar_height - text_size.y) * 0.5f
-        ));
-        ImGui::Text("XP: %d/%d", player._xp, player._xp_needed);
-        
+
+        // Dibujar texto centrado en la barra
+        ImVec2 text_size = ImGui::CalcTextSize(overlay);
+        ImVec2 text_pos = ImVec2(
+            cursor_pos.x + (bar_size.x - text_size.x) * 0.5f, // Centrar horizontalmente
+            cursor_pos.y + (bar_size.y - text_size.y) * 0.5f  // Centrar verticalmente
+        );
+
+        ImGui::GetWindowDrawList()->AddText(text_pos, IM_COL32(255, 255, 255, 255), overlay);
+
         ImGui::End();
     }
+
 };

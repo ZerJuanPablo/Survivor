@@ -31,7 +31,6 @@ struct Enemy {
 
     void destroy() {
         _model.destroy();
-        printf("Enemy destroyed\n");
     }
 
     void update(float delta_time, Player &player) {

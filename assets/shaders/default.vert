@@ -18,6 +18,9 @@ layout (location = 4) uniform mat4x4 normal_transform;
 layout (location = 8) uniform mat4x4 camera_transform;
 layout (location = 12) uniform mat4x4 camera_perspective;
 
+// For instancing 
+//layout (location = 16) uniform mat4x4 enemies_transform[10];
+
 void main() {
     vec4 world_pos = model_transform * vec4(in_pos, 1.0);
     gl_Position = camera_perspective * camera_transform * world_pos;
