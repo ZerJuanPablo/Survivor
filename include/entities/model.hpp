@@ -117,9 +117,11 @@ struct Model {
         for (auto texture: _textures) {
             texture.destroy();
         }
+        printf("Textures destroyed\n");
         for (auto mesh: _meshes) {
             mesh.destroy();
         }
+        printf("Meshes destroyed\n");
     }
             
 void draw(bool color = true) {

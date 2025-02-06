@@ -60,8 +60,8 @@ private:
     }
 
     void show_health_bar(Player& player, int window_width, int window_height) {
-        const float bar_width = 300.0f;
-        const float bar_height = 30.0f;
+        const float bar_width = 1000.0f;
+        const float bar_height = 20.0f;
         
         ImGui::SetNextWindowPos(ImVec2(
             (window_width - bar_width) * 0.5f,
@@ -92,12 +92,12 @@ private:
     }
 
     void show_xp_bar(Player& player, int window_width, int window_height) {
-        const float bar_width = 300.0f;
+        const float bar_width = 1000.0f;
         const float bar_height = 20.0f;
         
         ImGui::SetNextWindowPos(ImVec2(
             (window_width - bar_width) * 0.5f,
-            60  // 20 (health bar) + 30 (height) + 10 (spacing)
+            50  // 20 (health bar) + 30 (height) + 10 (spacing)
         ), ImGuiCond_Always);
         
         ImGui::Begin("XPBar", nullptr, 

@@ -18,6 +18,7 @@ using namespace gl46core;
 #include "entities/light.hpp"
 #include "entities/player.hpp"
 #include "entities/enemy.hpp"
+#include "uiManager.hpp"
 
 struct Engine {
 
@@ -39,41 +40,36 @@ struct Engine {
         _lights[0].init({0.0, 2.0, 0.0}, {3.0, 3.0, 3.0}, 600);
         //_lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
         
-
-        /*_mesh.init();
-        _pipeline_color.init("../shaders/color.vert", "../shaders/color.frag");
-        _mesh_color.init();
-        _transform_color._position.x -= 2.0f;
-        _transform_color._position.z -= 5.0f;
-        */
-        // create renderable models
+        // create players
         _player.init("../assets/models/Goldfish.obj");
         _player._model._transform._scale = glm::vec3(0.5f);
 
-        _enemy.init("../assets/models/Shark.obj", _player.get_position());
-        _enemy._model._transform._position = glm::vec3(3.0f, 0.0f, 2.0f);
-        // create renderable models
+        // create floor and walls
+        // 0 - floor
+        // 1 - top wall
+        // 2 - left wall
+        // 3 - right wall
+        // 4 - bottom wall
         _models.emplace_back().init(Mesh::eCube);
-        
+        _models[0]._transform._scale = glm::vec3(200.0f, 0.1f, 200.0f);
+        _models[0]._transform._position = glm::vec3(0.0f, -5.0f, 0.0f);
+        // TO DO: WALLS
 
+
+        // create initial enemies
+        _enemies.emplace_back().init("../assets/models/Shark.obj");
+        _enemies[0]._model._transform._position = glm::vec3(3.0f, 0.0f, 3.0f);  
+        // create cube in center of scene
+
+        // to delete enemies:
+        // _enemy.erase(_enemy.begin()+5);
         // audio stuff
 
         // true or false to able or disable
         SDL_SetWindowRelativeMouseMode(_window._window_p, false);
 
-        // Setup Dear ImGui context
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-        // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-        // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-        // Setup Dear ImGui style
-        ImGui::StyleColorsDark();
-
-        // Setup Platform/Renderer bindings
-        ImGui_ImplSDL3_InitForOpenGL(_window._window_p, _window._context);
-        ImGui_ImplOpenGL3_Init("#version 460 core");
+        // init ui manager
+        _uiManager.init(_window._window_p, _window._context);
     }
     
     void destroy() {
@@ -85,14 +81,12 @@ struct Engine {
         for (auto& light: _lights) light.destroy();
         for (auto& model: _models) model.destroy();
         _player.destroy();
-        _enemy.destroy();
+        for (auto& enemy: _enemies) enemy.destroy();
         _pipeline.destroy();
         _window.destroy();
         
         // shut down ImGui
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplSDL3_Shutdown();
-        ImGui::DestroyContext();
+        _uiManager.shutdown();
     }
     
     auto execute_event(SDL_Event* event_p) -> SDL_AppResult {
@@ -135,18 +129,17 @@ struct Engine {
         // update time for accurate Time:get_delta()
         Time::update();
 
-        // Start ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
-        // ImGui::ShowDemoWindow(); // Show demo window! :)
-        ImGui::Begin("FPS window");
-        ImGui::Text("%.1f fps", ImGui::GetIO().Framerate);
-        ImGui::End();
-
         // update input
         execute_input();
-        _enemy.update(Time::get_delta(), _player.get_position());
+        // Actualizar enemigos
+        for (auto& enemy : _enemies) {
+            enemy.update(Time::get_delta(), _player);
+        }
+
+        // Eliminar enemigos muertos
+        std::erase_if(_enemies, [](const Enemy& enemy) {
+            return enemy._state == Enemy::State::DEAD;
+        });
 
         // draw shadows
         if (_shadows_dirty) {
@@ -162,7 +155,7 @@ struct Engine {
                     // draw the stuff
                     for (auto& model: _models) model.draw(false);
                     _player.draw(false);
-                    _enemy.draw(false);
+                    for (auto& enemy: _enemies) enemy.draw(false);
                 }
             }
             _shadows_dirty = false;
@@ -184,12 +177,11 @@ struct Engine {
             // draw the stuff
             for (auto& model: _models) model.draw(false);
             _player.draw(false);
-            _enemy.draw(false);
+            for (auto& enemy: _enemies) enemy.draw(false);
         }
         
         // present to the screen
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        _uiManager.render(_player, width, height);
 
         SDL_GL_SwapWindow(_window._window_p);
         Input::flush();
@@ -202,7 +194,10 @@ struct Engine {
     std::array<Light, 1> _lights;
     std::vector<Model> _models;
     Player _player;
-    Enemy _enemy;
+    Model _floor;
+    std::vector<Enemy> _enemies;
+    UIManager _uiManager;
+    //Enemy _enemy;
     glm::vec3 offset = glm::vec3(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
     
 

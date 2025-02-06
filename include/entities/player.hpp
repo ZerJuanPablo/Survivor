@@ -23,6 +23,11 @@ public:
         update_rotation(window_width, window_height, glm::inverse(projection_mat), inv_view_mat);
     }
 
+    void take_damage(float damage) {
+        _hp -= damage;
+        if (_hp < 0) _hp = 0;
+    }
+
     void draw(bool bind_material = false) {
         _model.draw(bind_material);
     }
@@ -41,11 +46,6 @@ public:
 
     glm::vec3 get_position() const {
         return _model._transform._position + _center_offset;  // Devolvemos la posición corregida
-    }
-
-    void take_damage(float damage) {
-        _hp -= damage;
-        if (_hp < 0) _hp = 0;
     }
 
     float get_radius() const { return 1.0f; } // Ajusta según tu modelo real

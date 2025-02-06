@@ -5,6 +5,7 @@
 #include <string>
 #include <cmath>
 #include "entities/model.hpp"
+#include "entities/player.hpp"
 
 struct Enemy {
 
@@ -21,26 +22,34 @@ struct Enemy {
         _model._transform._scale = glm::vec3(0.5f);
     }
 
+    /*
+    ~Enemy() {
+        destroy();
+    }
+    */
+
 
     void destroy() {
         _model.destroy();
+        printf("Enemy destroyed\n");
     }
 
-    void update(float delta_time, glm::vec3 player_pos) {
+    void update(float delta_time, Player &player) {
+        glm::vec3 player_pos = player.get_position();
         if (_state == State::DEAD) {
-            // destroy();
             return;
         }
         update_movement(delta_time, player_pos);
         update_rotation(player_pos);
-        check_collision(player_pos);
+        check_collision(player);
     }
 
-    void check_collision(glm::vec3 player_pos) {
+    void check_collision(Player &player) {
 
-        if (glm::distance(get_position(), player_pos) - _radius <= 0.0f ) { // player pos -> player radius
+        if (glm::distance(get_position(), player.get_position()) - _radius <= 0.0f ) { // player pos -> player radius
             _state = State::DEAD;
-            // Player takes damage
+            player.take_damage(_damage);
+            destroy();
         }
     }
 
