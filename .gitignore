@@ -7,6 +7,7 @@ node_modules/
 # Ignore build directories
 dist/
 build/
+bin/
 
 # Ignore environment variables
 .env
@@ -18,9 +19,6 @@ Thumbs.db
 # Ignore IDE specific files
 .vscode/
 .idea/
-/bin
-/bin
 bin/opengl-renderer.pdb
 bin/opengl-renderer.exe
 bin/opengl-renderer.exe
-/bin
