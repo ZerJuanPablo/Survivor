@@ -7,6 +7,21 @@
 #include "entities/model.hpp"
 #include "entities/player.hpp"
 
+enum class EnemyType {
+    SHARK, // basic
+    KOI,  // speedy
+    ANGLER // tank 
+};
+
+struct EnemyConfig {
+    std::string model_key;
+    glm::vec3 center_offset;
+    float move_speed;
+    float max_hp;
+    float damage;
+    float radius;
+};
+
 struct Enemy {
 
     enum class State {
@@ -17,11 +32,17 @@ struct Enemy {
     void init(const std::string& model_path, const glm::vec3& center_offset = glm::vec3(0.0f)) {
         _model.init(model_path);
         _center_offset = center_offset;  // Ajustar manualmente si es necesario
-        _radius = 1.0f;
-        _state = State::ALIVE;
         _model._transform._scale = glm::vec3(0.5f);
     }
 
+    void init_from_config(const EnemyConfig& config){
+        _move_speed = config.move_speed;
+        max_hp = config.max_hp;
+        _hp = config.max_hp;
+        _damage = config.damage;
+        _radius = config.radius;
+        _center_offset = config.center_offset;
+    }
     /*
     ~Enemy() {
         destroy();
@@ -30,27 +51,29 @@ struct Enemy {
 
 
     void destroy() {
-        _model.destroy();
     }
 
     void update(float delta_time, Player &player) {
-        glm::vec3 player_pos = player.get_position();
-        if (_state == State::DEAD) {
-            return;
-        }
+        if (_state == State::DEAD) return;
+        
+        const glm::vec3 player_pos = player.get_position();
         update_movement(delta_time, player_pos);
         update_rotation(player_pos);
-        check_collision(player);
     }
 
-    void check_collision(Player &player) {
-
-        if (glm::distance(get_position(), player.get_position()) - _radius <= 0.0f ) { // player pos -> player radius
-            _state = State::DEAD;
-            player.take_damage(_damage);
-            destroy();
+    void take_damage(float ammount) {
+        _hp -= ammount;
+        if (_hp <= 0) {
+            die();
         }
     }
+
+    void die() {
+        _state = State::DEAD;
+        // sound
+        // drop xp
+        destroy();
+    }   
 
     void draw(bool bind_material = false) {
         _model.draw(bind_material);
@@ -66,10 +89,6 @@ struct Enemy {
 
     glm::vec3 get_position() const {
         return _model._transform._position + _center_offset;  // Devolvemos la posición corregida
-    }
-
-    glm::vec3 get_center() const {
-        return _model._transform._position + _center_offset;
     }
 
     float _move_speed = 0.5f;

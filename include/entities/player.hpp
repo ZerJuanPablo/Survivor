@@ -9,6 +9,7 @@
 
 struct Player {
 public:
+
     void init(const std::string& model_path, const glm::vec3& center_offset = glm::vec3(0.0f)) {
         _model.init(model_path);
         _center_offset = center_offset;  // Ajustar manualmente si es necesario
@@ -26,10 +27,20 @@ public:
     void take_damage(float damage) {
         _hp -= damage;
         if (_hp < 0) _hp = 0;
+        if (_hp == 0) {
+            // Game over
+        }
     }
 
     void draw(bool bind_material = false) {
         _model.draw(bind_material);
+    }
+
+    void level_up() {
+        _level++;
+        _xp = 0;
+        _xp_needed = static_cast<int>(100.0f * std::pow(_level, 1.5f));
+        // Logic to choose upgrade
     }
 
     void set_rotation(float angle) {
@@ -48,7 +59,7 @@ public:
         return _model._transform._position + _center_offset;  // Devolvemos la posición corregida
     }
 
-    float get_radius() const { return 1.0f; } // Ajusta según tu modelo real
+    float get_radius() const { return _radius; } // Ajusta según tu modelo real
 
     float _move_speed = 5.0f;
     int _hp = 100;
@@ -64,6 +75,7 @@ public:
     int _level = 1;
     int _xp_needed = 100.0f;
     float _xp_multiplier = 1.0f;
+    float _radius = 0.8f;
     Model _model;
     glm::vec3 _center_offset = glm::vec3(0.0f); // Desplazamiento del centro
 
@@ -114,8 +126,6 @@ private:
 
         return world_mouse_pos;
     }
-
-
 
     void update_rotation(float window_width, float window_height, const glm::mat4& inv_projection, const glm::mat4& inv_view) {
         glm::vec3 world_mouse_pos = get_mouse_world_position(window_width, window_height, inv_projection, inv_view);
