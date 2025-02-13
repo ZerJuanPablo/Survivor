@@ -6,6 +6,7 @@
 #include <cmath>
 #include "entities/model.hpp"
 #include "input.hpp"
+#include "entities/projectile.hpp"
 
 struct Player {
 public:
@@ -22,6 +23,19 @@ public:
     void update(float delta_time, float window_width, float window_height, const glm::mat4& projection_mat, const glm::mat4& inv_view_mat) {
         update_movement(delta_time);
         update_rotation(window_width, window_height, glm::inverse(projection_mat), inv_view_mat);
+    }
+
+    void update_shooting(float delta_time, const glm::vec3& shoot_direction) {
+        _fire_timer += delta_time;
+
+        if (_fire_timer >= _fire_rate) {
+            _fire_timer = 0.0f;
+            // Disparar
+        }
+    }
+
+    void shoot() {
+        // Crear proyectil
     }
 
     void take_damage(float damage) {
@@ -64,7 +78,8 @@ public:
     float _move_speed = 5.0f;
     int _hp = 100;
     int _max_hp = 100;
-    float _attack_speed = 1.0f;
+    float _fire_rate = 0.5f;
+    float _fire_timer = 0.0f;
     float _damage = 10.0f;
     int _piercing_strength = 1;
     float _luck = 1.0f;

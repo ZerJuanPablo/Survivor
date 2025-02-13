@@ -20,6 +20,7 @@ using namespace gl46core;
 #include "entities/enemy.hpp"
 #include "uiManager.hpp"
 #include <glm/gtc/random.hpp>
+#include "entities/projectile.hpp"
 
 struct Engine {
 
@@ -64,12 +65,6 @@ struct Engine {
         // load models to pool
         load_models_to_pool();
 
-        _enemies.emplace_back().init("../assets/models/Shark.obj");
-        _enemies[0]._model._transform._position = glm::vec3(3.0f, 0.0f, 3.0f);  
-        // create cube in center of scene
-
-        // to delete enemies:
-        // _enemy.erase(_enemy.begin()+5);
         // audio stuff
 
         // true or false to able or disable
@@ -339,6 +334,22 @@ struct Engine {
 
         SDL_GL_SwapWindow(_window._window_p);
         Input::flush();
+    }
+
+    void update_shooting(float delta_time) {
+        _fire_timer += delta_time;
+        const float fire_interval = 1.0f / _player._fire_rate; // Usar fire rate del jugador
+        
+        // Disparar múltiples veces si el delta_time es mayor al intervalo
+        while(_fire_timer >= fire_interval) {
+            // Calcular dirección...
+            glm::vec3 shoot_direction = /* ... */;
+            
+            // Crear proyectil con valores del jugador
+            _projectiles.emplace_back().init(_player, spawn_pos, shoot_direction);
+            
+            _fire_timer -= fire_interval;
+        }
     }
 
     Window _window;
