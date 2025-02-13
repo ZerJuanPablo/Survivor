@@ -59,6 +59,8 @@ struct Enemy {
         const glm::vec3 player_pos = player.get_position();
         update_movement(delta_time, player_pos);
         update_rotation(player_pos);
+
+        _move_speed = _move_speed + 0.01f; // Increase speed over time
     }
 
     void take_damage(float ammount) {

@@ -39,7 +39,7 @@ struct Engine {
         _pipeline_shadows.create_framebuffer();
 
         // create light and its shadow map
-        _lights[0].init({0.0, 2.0, 0.0}, {3.0, 3.0, 3.0}, 600);
+        _lights[0].init({0.0, 2.0, 0.0}, {5.0, 5.0, 5.0}, 600);
         //_lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
         
         // create players
@@ -163,7 +163,7 @@ struct Engine {
         _enemy_configs[EnemyType::SHARK] = {
             "shark",    // model_key
             glm::vec3(0.0f),       // center_offset    
-            0.9f,       // movement speed
+            1.1f,       // movement speed
             10.0f,      // max_hp
             1.0f,        // damage
             0.5f       // radius
@@ -172,7 +172,7 @@ struct Engine {
         _enemy_configs[EnemyType::KOI] = {
             "koi",
             glm::vec3(0.0f),
-            1.3f,
+            1.5f,
             5.0f,
             1.0f,
             0.3f
@@ -181,7 +181,7 @@ struct Engine {
         _enemy_configs[EnemyType::ANGLER] = {
             "angler",
             glm::vec3(0.0f),
-            0.5f,
+            0.8f,
             20.0f,
             5.0f,
             0.8f
@@ -200,29 +200,35 @@ struct Engine {
     void spawn_enemy_around_player() {
         const glm::vec3 player_pos = _player.get_position();
         const float angle = glm::linearRand(0.0f, glm::two_pi<float>());
-        const float radius = 5.0f;
+        const float radius = 12.0f;
         
-        glm::vec3 spawn_pos = player_pos + glm::vec3{
-            glm::cos(angle) * radius,
-            0.0f,
-            glm::sin(angle) * radius
-        };
-        
-        // Probabilidades de spawn
-        float rand = glm::linearRand(0.0f, 1.0f);
-        EnemyType type = EnemyType::SHARK;  // Por defecto
-        
-        if(rand < 0.6f) {       // 60% shark
-            type = EnemyType::SHARK;
-        } 
-        else if(rand < 0.85f) { // 25% koi (60-85)
-            type = EnemyType::KOI;
-        } 
-        else {                  // 15% angler (85-100)
-            type = EnemyType::ANGLER;
+        // Genera 3 enemigos
+        for (int i = 0; i < 2; ++i) {
+            // Calcula posición aleatoria alrededor del jugador
+            const float angle = glm::linearRand(0.0f, glm::two_pi<float>());
+            const glm::vec3 spawn_pos = player_pos + glm::vec3{
+                glm::cos(angle) * radius,
+                0.0f,
+                glm::sin(angle) * radius
+            };
+
+            // Determina el tipo de enemigo con probabilidades
+            const float rand = glm::linearRand(0.0f, 1.0f);
+            EnemyType type;
+
+            if (rand < 0.6f) {         // 60% shark
+                type = EnemyType::SHARK;
+            } 
+            else if (rand < 0.85f) {    // 25% koi
+                type = EnemyType::KOI;
+            } 
+            else {                      // 15% angler
+                type = EnemyType::ANGLER;
+            }
+
+            // Crea el enemigo
+            create_enemy(type, spawn_pos);
         }
-        
-        create_enemy(type, spawn_pos);
     }
 
     bool check_sphere_collision (const glm::vec3& pos1, float radius1, const glm::vec3& pos2, float radius2) {
@@ -359,7 +365,7 @@ struct Engine {
 
     // game increase difficulty
     float _spawn_timer;
-    const float _spawn_time = 1.0f;
+    const float _spawn_time = 3.0f;
 
     // other
     bool _shadows_dirty = true;
