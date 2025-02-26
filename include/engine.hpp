@@ -18,6 +18,7 @@ using namespace gl46core;
 #include "entities/light.hpp"
 #include "entities/player.hpp"
 #include "entities/enemy.hpp"
+#include "entities/projectile.hpp"
 #include "uiManager.hpp"
 #include <glm/gtc/random.hpp>
 
@@ -277,6 +278,33 @@ struct Engine {
                 enemy.die();
             }
         }
+
+        // Bullet vs Enemies
+
+    }
+
+    void update_bullets(float delta_time){
+        float attack_cooldown = 1.0f / _player._attack_speed;
+        time_since_last_shot += delta_time;
+
+        if (time_since_last_shot >= attack_cooldown)
+        {    
+            time_since_last_shot = 0;
+            _projectiles.emplace_back();
+            Projectile& new_projectile = _projectiles.back();
+            
+            glm::vec3 direction = glm::normalize(_player.get_mouse_world_position() - _player.get_position());
+
+            // Configurar propiedades
+            new_projectile.init(_player.get_position(), direction, _player._bullet_speed, _player._damage, _player._piercing_strength);
+            // sound effect
+        }
+
+        // move all bullets
+        for (auto& projectile : _projectiles)
+        {
+            projectile.update(delta_time);
+        }
     }
 
     void execute_frame() {
@@ -293,6 +321,8 @@ struct Engine {
         for (auto& enemy : _enemies) {
             enemy.update(Time::get_delta(), _player);
         }
+
+        update_bullets(delta_time);
 
         check_collisions();
 
@@ -338,6 +368,11 @@ struct Engine {
             for (auto& model: _terrain) model.draw(false);
             _player.draw(false);
             for (auto& enemy: _enemies) enemy.draw(false);
+
+            for (auto& projectile : _projectiles) {
+                projectile.draw(false);
+            }
+            
         }
         
         // present to the screen
@@ -356,6 +391,7 @@ struct Engine {
     Player _player;
     Model _floor;
     std::vector<Enemy> _enemies;
+    std::vector<Projectile> _projectiles;
     UIManager _uiManager;
     //Enemy _enemy;
     glm::vec3 offset = glm::vec3(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
@@ -366,6 +402,7 @@ struct Engine {
     // game increase difficulty
     float _spawn_timer;
     const float _spawn_time = 3.0f;
+    float time_since_last_shot = 0.0f;
 
     // other
     bool _shadows_dirty = true;

@@ -21,7 +21,11 @@ public:
 
     void update(float delta_time, float window_width, float window_height, const glm::mat4& projection_mat, const glm::mat4& inv_view_mat) {
         update_movement(delta_time);
-        update_rotation(window_width, window_height, glm::inverse(projection_mat), inv_view_mat);
+        _mouse_world_position = calculate_mouse_world_position(
+            window_width, 
+            window_height, 
+            glm::inverse(projection_mat), inv_view_mat);
+        update_rotation(_mouse_world_position);
     }
 
     void take_damage(float damage) {
@@ -55,6 +59,10 @@ public:
         _model._transform._position = pos - _center_offset;  // Ajustamos la posición real
     }
 
+    glm::vec3 get_mouse_world_position() const {
+        return _mouse_world_position;
+    }
+
     glm::vec3 get_position() const {
         return _model._transform._position + _center_offset;  // Devolvemos la posición corregida
     }
@@ -65,6 +73,7 @@ public:
     int _hp = 100;
     int _max_hp = 100;
     float _attack_speed = 1.0f;
+    float _bullet_speed = 12.0f;
     float _damage = 10.0f;
     int _piercing_strength = 1;
     float _luck = 1.0f;
@@ -80,6 +89,7 @@ public:
     glm::vec3 _center_offset = glm::vec3(0.0f); // Desplazamiento del centro
 
 private:
+    glm::vec3 _mouse_world_position = glm::vec3(0.0f);
 
     void update_movement(float delta_time) {
         glm::vec3 movement(0.0f);
@@ -99,7 +109,7 @@ private:
         }
     }
 
-    glm::vec3 get_mouse_world_position(float window_width, float window_height, const glm::mat4& inv_projection, const glm::mat4& inv_view) {
+    glm::vec3 calculate_mouse_world_position(float window_width, float window_height, const glm::mat4& inv_projection, const glm::mat4& inv_view) {
         auto [mouse_x, mouse_y] = Mouse::position();
 
         // Convertimos la posición del mouse a coordenadas normalizadas (-1 a 1)
@@ -127,9 +137,7 @@ private:
         return world_mouse_pos;
     }
 
-    void update_rotation(float window_width, float window_height, const glm::mat4& inv_projection, const glm::mat4& inv_view) {
-        glm::vec3 world_mouse_pos = get_mouse_world_position(window_width, window_height, inv_projection, inv_view);
-
+    void update_rotation(const glm::vec3& world_mouse_pos) {
         // Verificar si la posición del mouse es válida
         if (!std::isfinite(world_mouse_pos.x) || !std::isfinite(world_mouse_pos.z)) {
             return; // Evita rotaciones inválidas
