@@ -49,8 +49,6 @@ struct Engine {
         // create players
         _player.init("../assets/models/Goldfish.obj");
         _player._model._transform._scale = glm::vec3(0.5f);
-
-        spawn_boss();
         // create floor and walls
         // 0 - floor
         // 1 - top wall
@@ -68,6 +66,10 @@ struct Engine {
 
         // load models to pool
         load_models_to_pool();
+
+        _boss._state = Enemy::State::DEAD;
+        _boss_spawned = false;
+        _boss_spawn_timer = 0.0f;
 
         // create cube in center of scene
 
@@ -169,6 +171,10 @@ struct Engine {
             20.0f,
             30.0f,
             2.0f);
+
+        _boss._state = Enemy::State::ALIVE;
+        _boss_spawned = true;
+        
         Light _bosslight;
         _bosslight.init({0.0, 1.0, 0.0}, {5.1f, 5.4f, 6.0f}, 500);
         _lights.push_back(_bosslight);
@@ -179,6 +185,7 @@ struct Engine {
         _lights.pop_back();
         // audio
         _boss.die();
+        _boss_spawned = false;
     }
 
     void setup_enemy_configs() {
@@ -278,7 +285,7 @@ struct Engine {
             }
         }
 
-        if (_boss._state == Enemy::State::ALIVE) {
+        if (_boss._state == Enemy::State::ALIVE && _boss_spawned) {
             if (check_sphere_collision(player_pos, player_radius,
                                        _boss.get_position(), _boss._radius))
             {
@@ -293,7 +300,22 @@ struct Engine {
         // Bullet vs Enemies
         for (auto& projectile : _projectiles) {
             if (!projectile.is_active()) continue; // skip inactive bullets
-    
+            
+                            // boss coliision
+            if (_boss._state == Enemy::State::ALIVE) {
+                if (check_sphere_collision(projectile.get_position(), 
+                    projectile.get_radius(),
+                    _boss.get_position(),
+                    _boss._radius)) 
+                    {
+                    // Apply damage to boss
+                    _boss.take_damage(projectile.get_damage());                
+                    // Sound Effect            
+                    // If you have piercing logic:
+                    projectile._piercing -= 1;
+                }
+            } 
+
             for (auto& enemy : _enemies) {
                 if (enemy._state == Enemy::State::DEAD) continue;
     
@@ -311,7 +333,7 @@ struct Engine {
                     // If you have piercing logic:
                     projectile._piercing -= 1;
 
-                }
+                }  
             }
         }
     }
@@ -340,6 +362,32 @@ struct Engine {
         }
     }
 
+    void update_boss(float delta_time) {
+        if (_boss._state == Enemy::State::ALIVE && _boss_spawned) {
+            _boss.update(delta_time, _player);
+            // Obtener la posición actual del boss
+            glm::vec3 boss_position = _boss.get_position();
+
+            // Calcular la dirección hacia adelante basado en la rotación Y del boss
+            float angle = _boss._model._transform._rotation.y;  // Rotación en radianes
+            glm::vec3 forward = glm::vec3(glm::sin(angle), 0.0f, glm::cos(angle));
+
+            // Calcular nueva posición de la luz
+            glm::vec3 light_offset = forward * 3.f; // Mueve la luz 1.5 unidades al frente
+            light_offset.y += 1.5f; // Mantiene la luz un poco arriba
+
+            // Asignar la nueva posición de la luz
+            _lights[1]._position = boss_position + light_offset;
+        }
+        else {
+            _boss_spawn_timer += delta_time;
+            if (_boss_spawn_timer >= _boss_spawn_cooldown) {
+                spawn_boss();
+                _boss_spawn_timer = 0.0f;
+            }
+        }
+    }
+
     void execute_frame() {
         // update time for accurate Time:get_delta()
         Time::update();
@@ -349,26 +397,12 @@ struct Engine {
         execute_input();
 
         update_spawning(delta_time);
+        update_boss(delta_time);
 
         // Actualizar enemigos
         for (auto& enemy : _enemies) {
             enemy.update(Time::get_delta(), _player);
         }
-        _boss.update(delta_time, _player);
-
-        // Obtener la posición actual del boss
-        glm::vec3 boss_position = _boss.get_position();
-
-        // Calcular la dirección hacia adelante basado en la rotación Y del boss
-        float angle = _boss._model._transform._rotation.y;  // Rotación en radianes
-        glm::vec3 forward = glm::vec3(glm::sin(angle), 0.0f, glm::cos(angle));
-
-        // Calcular nueva posición de la luz
-        glm::vec3 light_offset = forward * 3.f; // Mueve la luz 1.5 unidades al frente
-        light_offset.y += 1.5f; // Mantiene la luz un poco arriba
-
-        // Asignar la nueva posición de la luz
-        _lights[1]._position = boss_position + light_offset;
 
         update_bullets(delta_time);
         check_collisions();
@@ -397,6 +431,9 @@ struct Engine {
                     for (auto& model: _terrain) model.draw(false);
                     _player.draw(false);
                     for (auto& enemy: _enemies) enemy.draw(false);
+                    if (_boss_spawned && _boss._state == Enemy::State::ALIVE) {
+                        _boss.draw(false);
+                    }
                 }
             }
             _shadows_dirty = false;
@@ -423,7 +460,10 @@ struct Engine {
             for (auto& projectile : _projectiles) {
                 projectile.draw(false);
             }
-            _boss.draw(false);
+            if (_boss_spawned && _boss._state == Enemy::State::ALIVE)
+            {
+                _boss.draw(false);
+            }
         }
         
         // present to the screen
@@ -455,6 +495,9 @@ struct Engine {
     float _spawn_timer;
     const float _spawn_time = 3.0f;
     float time_since_last_shot = 0.0f;
+    float _boss_spawn_timer = 0.0f;
+    const float _boss_spawn_cooldown = 60.0f;
+    bool _boss_spawned = false;
 
     // other
     bool _shadows_dirty = true;
