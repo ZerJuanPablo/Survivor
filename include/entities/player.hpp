@@ -102,7 +102,6 @@ private:
         if (Keys::pressed(SDLK_Q)) _hp -= 2; // Debugging
         if (Keys::pressed(SDLK_E)) _xp += 2; // Debugging
 
-
         if (glm::length(movement) > 0) {
             movement = glm::normalize(movement);
             _model._transform._position += movement * _move_speed * delta_time;

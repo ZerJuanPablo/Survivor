@@ -55,14 +55,14 @@ struct Enemy {
     void destroy() {
     }
 
-    void update(float delta_time, Player &player) {
+    virtual void update(float delta_time, Player &player) {
         if (_state == State::DEAD) return;
         
         const glm::vec3 player_pos = player.get_position();
         update_movement(delta_time, player_pos);
         update_rotation(player_pos);
 
-        _move_speed = _move_speed + 0.01f; // Increase speed over time
+        _move_speed = _move_speed + 0.003f; // Increase speed over time
     }
 
     void take_damage(float ammount) {
@@ -72,7 +72,7 @@ struct Enemy {
         }
     }
 
-    void die() {
+    virtual void die() {
         _state = State::DEAD;
         // sound
         // drop xp

@@ -21,6 +21,7 @@ using namespace gl46core;
 #include "entities/projectile.hpp"
 #include "uiManager.hpp"
 #include <glm/gtc/random.hpp>
+#include "entities/boss.hpp"
 
 struct Engine {
 
@@ -30,7 +31,7 @@ struct Engine {
 
         _window.init(width, height, "OpenGL Renderer");
         _camera.set_perspective(width, height, 70);
-        glm::vec3 rotation(-glm::radians(90.0f), glm::radians(180.0f), 0.0f);
+        glm::vec3 rotation(-glm::radians(70.0f), glm::radians(180.0f), 0.0f);
         _camera._rotation = rotation;
 
 
@@ -41,7 +42,7 @@ struct Engine {
 
         // create light and its shadow map
         Light player_light;
-        player_light.init({0.0, 2.0, 0.0}, {5.0, 5.0, 5.0}, 600);
+        player_light.init({0.0, 0.3, 0.0}, {4.0, 4.0, 4.6}, 350);
         _lights.push_back(player_light);
         //_lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
         
@@ -49,6 +50,7 @@ struct Engine {
         _player.init("../assets/models/Goldfish.obj");
         _player._model._transform._scale = glm::vec3(0.5f);
 
+        spawn_boss();
         // create floor and walls
         // 0 - floor
         // 1 - top wall
@@ -111,26 +113,26 @@ struct Engine {
     }
 
     void execute_input() {
-    float delta_time = Time::get_delta();
-    
-    // Update camera position and rotation
-    glm::mat4 inv_view = glm::inverse(_camera.get_view_matrix());
+        float delta_time = Time::get_delta();
+        
+        // Update camera position and rotation
+        glm::mat4 inv_view = glm::inverse(_camera.get_view_matrix());
 
-    _player.update(
-        delta_time,
-        width, height,
-        _camera._projection_mat,
-        inv_view
-    );
+        _player.update(
+            delta_time,
+            width, height,
+            _camera._projection_mat,
+            inv_view
+        );
 
-    // _enemy.update(delta_time, _player.get_position());
-    _camera._position = _player.get_position() + offset;
-    _lights[0]._position = _player.get_position() + glm::vec3(0.0f, 2.0f, 0.0f);
-    
-    //_player._model.look_at(_terrain[0]._transform._position);
+        // _enemy.update(delta_time, _player.get_position());
+        _camera._position = _player.get_position() + offset;
+        _lights[0]._position = _player.get_position() + glm::vec3(0.0f, 1.0f, 1.0f);
+        
+        //_player._model.look_at(_terrain[0]._transform._position);
 
-    // Process input
-    Input::flush();
+        // Process input
+        Input::flush();
     }
 
     void load_models_to_pool() {
@@ -158,6 +160,25 @@ struct Engine {
         new_enemy._model._transform._scale = glm::vec3(0.5f);
         new_enemy.set_position(position);
         new_enemy._state = Enemy::State::ALIVE;
+    }
+
+    void spawn_boss () {
+        _boss.init_boss("../assets/models/Anglerfish.obj",
+            glm::vec3(3.0f,3.0f,0.0f),
+            1.1f,
+            20.0f,
+            30.0f,
+            2.0f);
+        Light _bosslight;
+        _bosslight.init({0.0, 1.0, 0.0}, {5.1f, 5.4f, 6.0f}, 500);
+        _lights.push_back(_bosslight);
+    }
+
+    void boss_slained() {
+        // give xp to player
+        _lights.pop_back();
+        // audio
+        _boss.die();
     }
 
     void setup_enemy_configs() {
@@ -239,28 +260,6 @@ struct Engine {
 
     void check_collisions() {
 
-        /*
-
-        FOR FUTURE OPTIMIZATION:
-
-        // Pseudocódigo para spatial grid
-        void Engine::check_collisions() {
-        // 1. Crear grid espacial
-        SpatialGrid grid;
-        
-        // 2. Insertar todas las entidades colisionables
-        for (auto& enemy : _enemies) grid.insert(enemy);
-        for (auto& bullet : _bullets) grid.insert(bullet);
-        for (auto& xp : _xp_orbs) grid.insert(xp);
-        
-        // 3. Solo checkear colisiones en celdas adyacentes
-        grid.check_collisions([this](auto& a, auto& b) {
-            // Manejar colisión
-        });
-    }
-        */
-
-
         // Player vs Enemies
         const glm::vec3 player_pos = _player.get_position();
         const float player_radius = _player._radius;
@@ -276,6 +275,18 @@ struct Engine {
                 // Daño recíproco
                 _player.take_damage(enemy._damage);
                 enemy.die();
+            }
+        }
+
+        if (_boss._state == Enemy::State::ALIVE) {
+            if (check_sphere_collision(player_pos, player_radius,
+                                       _boss.get_position(), _boss._radius))
+            {
+                // Player and Boss both take damage (if you want mutual damage)
+                _player.take_damage(_boss._damage);
+                // teleport boss nearby
+                _boss.teleport_near_player(_player.get_position());
+                // sound effect
             }
         }
 
@@ -343,9 +354,23 @@ struct Engine {
         for (auto& enemy : _enemies) {
             enemy.update(Time::get_delta(), _player);
         }
+        _boss.update(delta_time, _player);
+
+        // Obtener la posición actual del boss
+        glm::vec3 boss_position = _boss.get_position();
+
+        // Calcular la dirección hacia adelante basado en la rotación Y del boss
+        float angle = _boss._model._transform._rotation.y;  // Rotación en radianes
+        glm::vec3 forward = glm::vec3(glm::sin(angle), 0.0f, glm::cos(angle));
+
+        // Calcular nueva posición de la luz
+        glm::vec3 light_offset = forward * 3.f; // Mueve la luz 1.5 unidades al frente
+        light_offset.y += 1.5f; // Mantiene la luz un poco arriba
+
+        // Asignar la nueva posición de la luz
+        _lights[1]._position = boss_position + light_offset;
 
         update_bullets(delta_time);
-
         check_collisions();
 
         // Eliminar enemigos muertos
@@ -398,7 +423,7 @@ struct Engine {
             for (auto& projectile : _projectiles) {
                 projectile.draw(false);
             }
-            
+            _boss.draw(false);
         }
         
         // present to the screen
@@ -415,12 +440,13 @@ struct Engine {
     std::vector<Light> _lights;
     std::vector<Model> _terrain;
     Player _player;
+    Boss _boss;
     Model _floor;
     std::vector<Enemy> _enemies;
     std::vector<Projectile> _projectiles;
     UIManager _uiManager;
     //Enemy _enemy;
-    glm::vec3 offset = glm::vec3(-0.5f, 12.0f, 0.0f); // Offset con un desplazamiento en X
+    glm::vec3 offset = glm::vec3(-0.5f, 19.0f, -7.0f); // Offset con un desplazamiento en X
     
     std::unordered_map<std::string, Model> _model_pool;
     std::unordered_map<EnemyType, EnemyConfig> _enemy_configs;

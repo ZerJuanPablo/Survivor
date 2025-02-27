@@ -76,19 +76,19 @@ struct Model {
             if (material_p->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
                 material._diffuse = glm::vec3(color.r, color.g, color.b);
             } else {
-                material._diffuse = glm::vec3(0.8f); // Valor predeterminado
+                material._diffuse = glm::vec3(0.76f, 0.70f, 0.50f); // Valor predeterminado
             }
 
             // Ks (Color Especular)
             if (material_p->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS) {
                 material._specularColor = glm::vec3(color.r, color.g, color.b);
             } else {
-                material._specularColor = glm::vec3(1.0f); // Valor predeterminado
+                material._specularColor = glm::vec3(0.1f, 0.1f, 0.1f); // Valor predeterminado
             }
 
             // Ns (Shininess)
             if (material_p->Get(AI_MATKEY_SHININESS, material._specular_shininess) != AI_SUCCESS) {
-                material._specular_shininess = 32.0f; // Valor predeterminado
+                material._specular_shininess = 4.0f; // Valor predeterminado
             }
 
 

@@ -17,10 +17,10 @@ struct Material {
     }
 
     float _texture_contribution = 0;           // Contribución de la textura
-    float _specular = 1;                       // Factor especular
-    float _specular_shininess = 32;            // Brillo especular (Ns)
+    float _specular = 0.4;                       // Factor especular
+    float _specular_shininess = 4;            // Brillo especular (Ns)
 
     glm::vec3 _ambient = glm::vec3(0.1f);      // Color ambiental (Ka)
-    glm::vec3 _diffuse = glm::vec3(0.8f);      // Color difuso (Kd)
-    glm::vec3 _specularColor = glm::vec3(1.0f); // Color especular (Ks)
+    glm::vec3 _diffuse = glm::vec3(0.76f, 0.70f, 0.50f);      // Color difuso (Kd)
+    glm::vec3 _specularColor = glm::vec3(0.1f, 0.1f, 0.1f); // Color especular (Ks)
 };
