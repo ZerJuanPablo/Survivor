@@ -1,4 +1,6 @@
 #pragma once
+#include <iostream>
+#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
@@ -10,7 +12,7 @@
 enum class EnemyType {
     SHARK, // basic
     KOI,  // speedy
-    ANGLER // tank 
+    BLOB // tank 
 };
 
 struct EnemyConfig {
@@ -38,7 +40,7 @@ struct Enemy {
     void init_from_config(const EnemyConfig& config){
         _move_speed = config.move_speed;
         max_hp = config.max_hp;
-        _hp = config.max_hp;
+        _hp = max_hp;
         _damage = config.damage;
         _radius = config.radius;
         _center_offset = config.center_offset;

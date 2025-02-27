@@ -40,7 +40,9 @@ struct Engine {
         _pipeline_shadows.create_framebuffer();
 
         // create light and its shadow map
-        _lights[0].init({0.0, 2.0, 0.0}, {5.0, 5.0, 5.0}, 600);
+        Light player_light;
+        player_light.init({0.0, 2.0, 0.0}, {5.0, 5.0, 5.0}, 600);
+        _lights.push_back(player_light);
         //_lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
         
         // create players
@@ -65,8 +67,6 @@ struct Engine {
         // load models to pool
         load_models_to_pool();
 
-        _enemies.emplace_back().init("../assets/models/Shark.obj");
-        _enemies[0]._model._transform._position = glm::vec3(3.0f, 0.0f, 3.0f);  
         // create cube in center of scene
 
         // to delete enemies:
@@ -140,8 +140,8 @@ struct Engine {
         _model_pool["koi"] = Model();
         _model_pool["koi"].init("../assets/models/Koi.obj");
 
-        _model_pool["angler"] = Model();
-        _model_pool["angler"].init("../assets/models/Anglerfish.obj");
+        _model_pool["blob"] = Model();
+        _model_pool["blob"].init("../assets/models/Blobfish.obj");
     }
 
     void create_enemy(EnemyType type, const glm::vec3& position){
@@ -165,7 +165,7 @@ struct Engine {
             "shark",    // model_key
             glm::vec3(0.0f),       // center_offset    
             1.1f,       // movement speed
-            10.0f,      // max_hp
+            3.0f,      // max_hp
             1.0f,        // damage
             0.5f       // radius
         };
@@ -174,16 +174,16 @@ struct Engine {
             "koi",
             glm::vec3(0.0f),
             1.5f,
-            5.0f,
+            1.0f,
             1.0f,
             0.3f
         };
 
-        _enemy_configs[EnemyType::ANGLER] = {
-            "angler",
+        _enemy_configs[EnemyType::BLOB] = {
+            "blob",
             glm::vec3(0.0f),
             0.8f,
-            20.0f,
+            7.0f,
             5.0f,
             0.8f
         };
@@ -223,8 +223,8 @@ struct Engine {
             else if (rand < 0.85f) {    // 25% koi
                 type = EnemyType::KOI;
             } 
-            else {                      // 15% angler
-                type = EnemyType::ANGLER;
+            else {                      // 15% blob
+                type = EnemyType::BLOB;
             }
 
             // Crea el enemigo
@@ -280,7 +280,29 @@ struct Engine {
         }
 
         // Bullet vs Enemies
+        for (auto& projectile : _projectiles) {
+            if (!projectile.is_active()) continue; // skip inactive bullets
+    
+            for (auto& enemy : _enemies) {
+                if (enemy._state == Enemy::State::DEAD) continue;
+    
+                // Check collision
+                if (check_sphere_collision(projectile.get_position(), 
+                                           projectile.get_radius(),
+                                           enemy.get_position(),
+                                           enemy._radius)) 
+                {
+                    // Apply damage to enemy
+                    enemy.take_damage(projectile.get_damage());
+                    
+                    // Sound Effect
 
+                    // If you have piercing logic:
+                    projectile._piercing -= 1;
+
+                }
+            }
+        }
     }
 
     void update_bullets(float delta_time){
@@ -329,6 +351,10 @@ struct Engine {
         // Eliminar enemigos muertos
         std::erase_if(_enemies, [](const Enemy& enemy) {
             return enemy._state == Enemy::State::DEAD;
+        });
+
+        std::erase_if(_projectiles, [](const Projectile& projectile) {
+            return !projectile.is_active();
         });
 
         // draw shadows
@@ -386,7 +412,7 @@ struct Engine {
     Camera _camera;
     Pipeline _pipeline;
     Pipeline _pipeline_shadows;
-    std::array<Light, 1> _lights;
+    std::vector<Light> _lights;
     std::vector<Model> _terrain;
     Player _player;
     Model _floor;

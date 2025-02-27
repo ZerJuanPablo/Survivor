@@ -20,6 +20,8 @@ public:
         _damage = damage;
         _piercing = piercing;
 
+        _lifespan = 2.0f;
+
         // Si quieres usar un modelo para la bala (una esfera pequeña, por ejemplo):
         _model.init(Mesh::eSphere);                 // Carga un mesh de esfera
         _model._transform._scale = glm::vec3(0.2f); // Escala pequeña
@@ -35,9 +37,8 @@ public:
             deactivate();
         }
 
-        // Aquí podrías poner lógica para desactivar la bala si está "muy lejos" o ya no te sirve
-        float max_distance = 200.0f; 
-        if (glm::length(_position) > max_distance) {
+        _lifespan -= deltaTime; 
+        if (_lifespan <= 0) {
             _active = false;
         }
 
@@ -56,6 +57,7 @@ public:
     bool is_active() const { return _active; }
     const glm::vec3& get_position() const { return _position; }
     float get_radius() const { return _radius; }
+    float get_damage() const { return _damage; }
 
     // Permite desactivarla (si impacta a un enemigo, etc.)
     void deactivate() { _active = false; }
@@ -63,10 +65,13 @@ public:
     float _damage;
     int _piercing;
     Model _model;
+
 private:
+
     glm::vec3 _position = glm::vec3(0.0f);
     glm::vec3 _direction = glm::vec3(0.0f);
     float _speed = 0.0f;
     bool _active = false;
     float _radius = 0.2f;
+    float _lifespan = 0.0f;
 };
