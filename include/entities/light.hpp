@@ -31,17 +31,17 @@ struct Light {
     }
     void bind(GLuint offset = 0) {
         // bind simple light properties
-        glUniform3f(23 + offset, _position.x, _position.y, _position.z);
-        glUniform3f(24 + offset, _color.r, _color.g, _color.b);
-        glUniform1f(25 + offset, _range);
+        glUniform3f(24 + offset, _position.x, _position.y, _position.z);
+        glUniform3f(25 + offset, _color.r, _color.g, _color.b);
+        glUniform1f(26 + offset, _range);
     }
     void bind_write(GLuint framebuffer, GLuint face_i) {
         bind();
         // set framebuffer texture and clear it
         glNamedFramebufferTextureLayer(framebuffer, GL_DEPTH_ATTACHMENT, _shadow_texture, 0, face_i);
         // bind the light view+projection matrices (act like it is the camera)
-        glUniformMatrix4fv( 8, 1, false, glm::value_ptr(_shadow_views[face_i]));
-        glUniformMatrix4fv(12, 1, false, glm::value_ptr(_shadow_projection));
+        glUniformMatrix4fv( 9, 1, false, glm::value_ptr(_shadow_views[face_i]));
+        glUniformMatrix4fv(13, 1, false, glm::value_ptr(_shadow_projection));
     }
     void bind_read(GLuint tex_unit, GLuint offset) {
         bind(offset);

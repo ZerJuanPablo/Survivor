@@ -13,13 +13,13 @@ layout (location = 0) out vec4 out_color;
 // Uniforms (texturas y materiales)
 layout (binding = 0) uniform sampler2D tex_diffuse;
 layout (binding = 1) uniform samplerCube tex_shadows[LIGHT_COUNT];
-layout (location = 16) uniform vec3 camera_pos;
-layout (location = 17) uniform float texture_contribution;
-layout (location = 18) uniform float specular;
-layout (location = 19) uniform float specular_shininess;
-layout (location = 20) uniform vec3 mat_ambient;
-layout (location = 21) uniform vec3 mat_diffuse;
-layout (location = 22) uniform vec3 mat_specular;
+layout (location = 17) uniform vec3 camera_pos;
+layout (location = 18) uniform float texture_contribution;
+layout (location = 19) uniform float specular;
+layout (location = 20) uniform float specular_shininess;
+layout (location = 21) uniform vec3 mat_ambient;
+layout (location = 22) uniform vec3 mat_diffuse;
+layout (location = 23) uniform vec3 mat_specular;
 
 // Estructura de luz
 struct Light {
@@ -27,7 +27,7 @@ struct Light {
     vec3 col;    // Color de la luz
     float range; // Alcance de la luz
 };
-layout (location = 23) uniform Light lights[LIGHT_COUNT];
+layout (location = 24) uniform Light lights[LIGHT_COUNT];
 
 // Cálculo principal
 void main() {
@@ -35,7 +35,7 @@ void main() {
     vec3 view_dir = normalize(camera_pos - in_pos); // Vector hacia la cámara
 
     // Iluminación ambiental
-    vec3 ambient = mat_ambient * 0.1;
+    vec3 ambient = mat_ambient * 0.05;
 
     // Iluminación difusa y especular
     vec3 diffuse = vec3(0.0);

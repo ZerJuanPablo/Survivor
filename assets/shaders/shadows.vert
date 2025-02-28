@@ -8,10 +8,11 @@ layout (location = 3) in vec2 in_uv;
 // output
 layout (location = 0) out vec3 out_pos;
 // uniforms
-layout (location = 0) uniform mat4x4 model_transform;
-layout (location = 4) uniform mat4x4 normal_transform;
-layout (location = 8) uniform mat4x4 camera_transform;
-layout (location = 12) uniform mat4x4 camera_perspective;
+layout (location = 0) uniform float uTime;
+layout (location = 1) uniform mat4x4 model_transform;
+layout (location = 5) uniform mat4x4 normal_transform;
+layout (location = 9) uniform mat4x4 camera_transform;
+layout (location = 13) uniform mat4x4 camera_perspective;
 
 void main() {
     gl_Position = model_transform * vec4(in_pos, 1.0);

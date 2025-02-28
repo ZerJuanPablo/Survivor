@@ -20,7 +20,7 @@ struct Mesh {
         float n = -0.5f; // for readability
         float p = +0.5f; // for readability
         glm::vec4 cube_color;
-        cube_color = {0.1f, 0.30f, 0.50f, 1.0f};
+        cube_color = {0.2f, 0.6f, 1.0f, 1.0f};
         std::vector<Vertex> vertices = {
             {{n, n, p}, {0, 0, +1}, cube_color, {0.33, 0.75}}, // front
             {{p, n, p}, {0, 0, +1}, cube_color, {0.66, 0.75}},

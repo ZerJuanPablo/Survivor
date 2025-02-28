@@ -42,7 +42,7 @@ struct Engine {
 
         // create light and its shadow map
         Light player_light;
-        player_light.init({0.0, 0.3, 0.0}, {4.0, 4.0, 4.6}, 350);
+        player_light.init({0.0, 0.3, 0.0}, {5.0, 5.0, 5.6}, 350);
         _lights.push_back(player_light);
         //_lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
         
@@ -176,7 +176,7 @@ struct Engine {
         _boss_spawned = true;
         
         Light _bosslight;
-        _bosslight.init({0.0, 1.0, 0.0}, {5.1f, 5.4f, 6.0f}, 500);
+        _bosslight.init({0.0, 1.0, 0.0}, {4.1f, 4.4f, 4.6f}, 500);
         _lights.push_back(_bosslight);
     }
 
@@ -421,6 +421,7 @@ struct Engine {
             // do this for each light
             for (auto& light: _lights) {
                 _pipeline_shadows.bind();
+                glUniform1f(0, Time::get_total());
                 glViewport(0, 0, light._shadow_width, light._shadow_height);
                 // render into each cubemap face
                 for (int face = 0; face < 6; face++) {
@@ -443,6 +444,7 @@ struct Engine {
         {
             // bind pipeline
             _pipeline.bind();
+            glUniform1f(0, Time::get_total());
             glViewport(0, 0, 1280, 720);
             // clear screen before drawing
             glClearColor(0.08627451f, 0.19607843f, 0.35686275f, 1.0);

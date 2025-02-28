@@ -13,16 +13,21 @@ layout (location = 2) out vec4 out_col;    // Color interpolado
 layout (location = 3) out vec2 out_uv;     // Coordenadas UV
 
 // uniforms
-layout (location = 0) uniform mat4x4 model_transform;
-layout (location = 4) uniform mat4x4 normal_transform;
-layout (location = 8) uniform mat4x4 camera_transform;
-layout (location = 12) uniform mat4x4 camera_perspective;
-
-// For instancing 
-//layout (location = 16) uniform mat4x4 enemies_transform[10];
+layout (location = 0) uniform float uTime;
+layout (location = 1) uniform mat4x4 model_transform;
+layout (location = 5) uniform mat4x4 normal_transform;
+layout (location = 9) uniform mat4x4 camera_transform;
+layout (location = 13) uniform mat4x4 camera_perspective;
 
 void main() {
-    vec4 world_pos = model_transform * vec4(in_pos, 1.0);
+    // wave motion effect
+    // inspired by https://www.youtube.com/watch?v=l9NX06mvp2E
+    float freq = 2.0;
+    float amp = 0.35;
+    float wavex = cos(in_pos.x * freq + uTime) * amp;
+    vec3 modified_pos = in_pos + vec3(0.0, wavex, 0.0);
+
+    vec4 world_pos = model_transform * vec4(modified_pos, 1.0);
     gl_Position = camera_perspective * camera_transform * world_pos;
 
     // Enviar atributos a fragment shader

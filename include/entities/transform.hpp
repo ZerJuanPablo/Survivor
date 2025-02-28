@@ -18,8 +18,8 @@ struct Transform {
         transform_matrix = transform_matrix * normal_matrix;
         transform_matrix = glm::scale(transform_matrix, _scale);
         // upload to GPU
-        glUniformMatrix4fv(0, 1, false, glm::value_ptr(transform_matrix));
-        glUniformMatrix4fv(4, 1, false, glm::value_ptr(normal_matrix));
+        glUniformMatrix4fv(1, 1, false, glm::value_ptr(transform_matrix));
+        glUniformMatrix4fv(5, 1, false, glm::value_ptr(normal_matrix));
     }
 
     glm::vec3 _position = glm::vec3(0, 0, 0);

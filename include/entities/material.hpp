@@ -4,16 +4,16 @@
 struct Material {
     void bind() {
         // Textura
-        glUniform1f(17, _texture_contribution);
+        glUniform1f(18, _texture_contribution);
 
         // Propiedades de iluminación
-        glUniform1f(18, _specular);
-        glUniform1f(19, _specular_shininess);
+        glUniform1f(19, _specular);
+        glUniform1f(20, _specular_shininess);
 
         // Colores del material
-        glUniform3fv(20, 1, &_ambient[0]);   // Uniform para Ka (ambient)
-        glUniform3fv(21, 1, &_diffuse[0]);   // Uniform para Kd (diffuse)
-        glUniform3fv(22, 1, &_specularColor[0]); // Uniform para Ks (specular)
+        glUniform3fv(21, 1, &_ambient[0]);   // Uniform para Ka (ambient)
+        glUniform3fv(22, 1, &_diffuse[0]);   // Uniform para Kd (diffuse)
+        glUniform3fv(23, 1, &_specularColor[0]); // Uniform para Ks (specular)
     }
 
     float _texture_contribution = 0;           // Contribución de la textura

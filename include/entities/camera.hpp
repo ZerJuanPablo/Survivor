@@ -29,9 +29,9 @@ struct Camera {
     void bind() {
         glm::mat4x4 view_mat = get_view_matrix();
         // upload to GPU
-        glUniformMatrix4fv(8, 1, false, glm::value_ptr(view_mat));
-        glUniformMatrix4fv(12, 1, false, glm::value_ptr(_projection_mat));
-        glUniform3f(16, _position.x, _position.y, _position.z);
+        glUniformMatrix4fv(9, 1, false, glm::value_ptr(view_mat));
+        glUniformMatrix4fv(13, 1, false, glm::value_ptr(_projection_mat));
+        glUniform3f(17, _position.x, _position.y, _position.z);
     }
 
     glm::mat4x4 _projection_mat;
