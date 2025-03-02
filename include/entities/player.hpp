@@ -40,11 +40,14 @@ public:
         _model.draw(bind_material);
     }
 
-    void level_up() {
-        _level++;
-        _xp = 0;
-        _xp_needed = static_cast<int>(100.0f * std::pow(_level, 1.5f));
-        // Logic to choose upgrade
+    void gain_xp(float amount) {
+        _xp += amount * _xp_multiplier;
+        if (_xp >= _xp_needed){
+            _level++;
+            _xp = _xp % _xp_needed;
+            _xp_needed = _xp_needed * 1.15f;
+            _showLevelUpWindow = true;
+        }
     }
 
     void set_rotation(float angle) {
@@ -69,6 +72,9 @@ public:
 
     float get_radius() const { return _radius; } // Ajusta según tu modelo real
 
+    bool showLevelUpWindow() const { return _showLevelUpWindow; }
+    void setShowLevelUpWindow(bool show) { _showLevelUpWindow = show; }
+
     float _move_speed = 5.0f;
     int _hp = 100;
     int _max_hp = 100;
@@ -81,12 +87,13 @@ public:
     float _crit_chance = 0.05f;
     int _bullet_type = 0;
     int _xp = 0;
+    float _xp_multiplier = 1.0f;
     int _level = 1;
     int _xp_needed = 100.0f;
-    float _xp_multiplier = 1.0f;
     float _radius = 0.8f;
     Model _model;
     glm::vec3 _center_offset = glm::vec3(0.0f); // Desplazamiento del centro
+    bool _showLevelUpWindow = false;
 
 private:
     glm::vec3 _mouse_world_position = glm::vec3(0.0f);
@@ -100,7 +107,7 @@ private:
         if (Keys::down(SDLK_D)) movement.x -= 1.0f;
         
         if (Keys::pressed(SDLK_Q)) _hp -= 2; // Debugging
-        if (Keys::pressed(SDLK_E)) _xp += 2; // Debugging
+        if (Keys::pressed(SDLK_E)) _xp += 99; // Debugging
 
         if (glm::length(movement) > 0) {
             movement = glm::normalize(movement);

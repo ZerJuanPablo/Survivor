@@ -65,10 +65,11 @@ struct Enemy {
         _move_speed = _move_speed + 0.003f; // Increase speed over time
     }
 
-    void take_damage(float ammount) {
+    void take_damage(float ammount, Player &player) {
         _hp -= ammount;
         if (_hp <= 0) {
             die();
+            player.gain_xp(base_xp);
         }
     }
 
@@ -76,6 +77,7 @@ struct Enemy {
         _state = State::DEAD;
         // sound
         // drop xp
+
         destroy();
     }   
 
@@ -103,6 +105,7 @@ struct Enemy {
     Model _model;
     glm::vec3 _center_offset = glm::vec3(0.0f);
     float _radius = 1.0f;
+    float base_xp = 3.0f;
     State _state = State::ALIVE;
 
 private:

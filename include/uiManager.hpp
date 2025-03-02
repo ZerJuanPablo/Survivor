@@ -4,6 +4,7 @@
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
 #include "entities/player.hpp"
+#include "entities/upgrade.hpp"
 
 class UIManager {
 public:
@@ -27,15 +28,44 @@ public:
         ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
     }
-
-    void render(Player& player, int window_width, int window_height) {
+    bool render(Player& player, int window_width, int window_height, bool showing_upgrades, const std::vector<Upgrade> upgrades) {
         start_frame();
         show_fps_window();
         show_health_bar(player, window_width, window_height);
         show_xp_bar(player, window_width, window_height);
+        
+        // Mover la lógica de upgrades dentro del frame de ImGui
+        if(showing_upgrades) {
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+            ImGui::SetNextWindowFocus(); 
+            ImGui::SetNextWindowPos(ImVec2(window_width/2.0f, window_height/2.0f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+            ImGui::Begin("Mejoras disponibles", nullptr, 
+                ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+            
+            for(int i = 0; i < upgrades.size(); ++i) {
+                auto& upgrade = upgrades[i];
+                ImGui::PushID(i);
+                
+                if(ImGui::Button(upgrade.name.c_str(), ImVec2(200, 50))) {
+                    upgrade.apply(player);
+                    showing_upgrades = false;
+                    player.setShowLevelUpWindow(false);
+                    printf("Click");
+                }
+                
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("%s", upgrade.description.c_str());
+                }
+                
+                ImGui::PopID();
+            }
+            
+            ImGui::End();
+        }
+        
         end_frame();
+        return showing_upgrades;
     }
-
 private:
     void start_frame() {
         ImGui_ImplOpenGL3_NewFrame();

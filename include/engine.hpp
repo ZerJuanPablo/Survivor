@@ -22,6 +22,7 @@ using namespace gl46core;
 #include "uiManager.hpp"
 #include <glm/gtc/random.hpp>
 #include "entities/boss.hpp"
+#include "entities/upgrade.hpp"
 
 struct Engine {
 
@@ -117,15 +118,18 @@ struct Engine {
     void execute_input() {
         float delta_time = Time::get_delta();
         
-        // Update camera position and rotation
-        glm::mat4 inv_view = glm::inverse(_camera.get_view_matrix());
+        if (!_showing_upgrades)
+        {
+            // Update camera position and rotation
+            glm::mat4 inv_view = glm::inverse(_camera.get_view_matrix());
 
-        _player.update(
-            delta_time,
-            width, height,
-            _camera._projection_mat,
-            inv_view
+            _player.update(
+                delta_time,
+                width, height,
+                _camera._projection_mat,
+                inv_view
         );
+        }
 
         // _enemy.update(delta_time, _player.get_position());
         _camera._position = _player.get_position() + offset;
@@ -186,6 +190,49 @@ struct Engine {
         // audio
         _boss.die();
         _boss_spawned = false;
+    }
+
+    float get_rarity_weight(Rarity rarity) {
+        switch(rarity) {
+            case Rarity::COMMON:    return 70.0f;
+            case Rarity::UNCOMMON:  return 25.0f;
+            case Rarity::RARE:     return 5.0f;
+            default:               return 0.0f;
+        }
+    }
+
+    Upgrade select_random_upgrade(const std::vector<Upgrade>& upgrades){
+        static std::random_device rd;
+        static std::mt19937 rng(rd());
+        // Sistema de ponderación por rareza
+        std::vector<float> weights;
+        for(const auto& upgrade : upgrades) {
+            weights.push_back(get_rarity_weight(upgrade.rarity));
+        }
+                
+        // Selección aleatoria ponderada
+        std::discrete_distribution<> dist(weights.begin(), weights.end());
+        return upgrades[dist(rng)];
+    }
+
+    void generate_upgrades(){
+        _current_upgrades.clear();
+        
+        static const std::vector<Upgrade> all_upgrades = {
+            {"Damage up", "+10% damage", Rarity::COMMON, [](Player& p){ p._damage *= 1.1f; }},
+            {"Speed up", "+5% speed", Rarity::COMMON, [](Player& p){ p._move_speed *= 1.05f; }},
+            {"Attack speed up", "+10% attack speed up", Rarity::COMMON, [](Player& p){ p._attack_speed *= 1.1f; }},
+            {"XP mult", "+0.2 XP mult", Rarity::UNCOMMON, [](Player& p){ p._xp_multiplier += 0.2f; }},
+            {"Strong Damage up", "+25% damage", Rarity::UNCOMMON, [](Player& p){ p._damage *= 1.25f; }},
+            {"Max HP up", "+50 HP", Rarity::UNCOMMON, [](Player& p){ p._max_hp += 20; }},
+            {"Piercing up", "+1 piercing", Rarity::RARE, [](Player& p){ p._piercing_strength += 1; }},
+            
+        };
+        
+        // Seleccionar 3 aleatorias con ponderación por rareza
+        for(int i = 0; i < 3; ++i) {
+            _current_upgrades.push_back(select_random_upgrade(all_upgrades));
+        }
     }
 
     void setup_enemy_configs() {
@@ -309,7 +356,7 @@ struct Engine {
                     _boss._radius)) 
                     {
                     // Apply damage to boss
-                    _boss.take_damage(projectile.get_damage());                
+                    _boss.take_damage(projectile.get_damage(), _player);                
                     // Sound Effect            
                     // If you have piercing logic:
                     projectile._piercing -= 1;
@@ -326,13 +373,12 @@ struct Engine {
                                            enemy._radius)) 
                 {
                     // Apply damage to enemy
-                    enemy.take_damage(projectile.get_damage());
+                    enemy.take_damage(projectile.get_damage(), _player);
                     
                     // Sound Effect
 
                     // If you have piercing logic:
                     projectile._piercing -= 1;
-
                 }  
             }
         }
@@ -396,16 +442,18 @@ struct Engine {
         // update input
         execute_input();
 
-        update_spawning(delta_time);
-        update_boss(delta_time);
-
-        // Actualizar enemigos
-        for (auto& enemy : _enemies) {
-            enemy.update(Time::get_delta(), _player);
+        if (!_showing_upgrades) {
+            update_spawning(delta_time);
+            update_boss(delta_time);
+    
+            // Actualizar enemigos
+            for (auto& enemy : _enemies) {
+                enemy.update(Time::get_delta(), _player);
+            }
+    
+            update_bullets(delta_time);
+            check_collisions();
         }
-
-        update_bullets(delta_time);
-        check_collisions();
 
         // Eliminar enemigos muertos
         std::erase_if(_enemies, [](const Enemy& enemy) {
@@ -468,8 +516,12 @@ struct Engine {
             }
         }
         
-        // present to the screen
-        _uiManager.render(_player, width, height);
+        bool level_up_triggered = _player.showLevelUpWindow();
+        if (!_showing_upgrades && level_up_triggered) {
+            generate_upgrades();
+            _showing_upgrades = true;
+        }
+        _showing_upgrades = _uiManager.render(_player, width, height, _showing_upgrades, _current_upgrades);
 
         SDL_GL_SwapWindow(_window._window_p);
         Input::flush();
@@ -500,6 +552,8 @@ struct Engine {
     float _boss_spawn_timer = 0.0f;
     const float _boss_spawn_cooldown = 60.0f;
     bool _boss_spawned = false;
+    std::vector<Upgrade> _current_upgrades;
+    bool _showing_upgrades = false;
 
     // other
     bool _shadows_dirty = true;
