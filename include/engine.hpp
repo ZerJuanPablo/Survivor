@@ -23,6 +23,7 @@ using namespace gl46core;
 #include <glm/gtc/random.hpp>
 #include "entities/boss.hpp"
 #include "entities/upgrade.hpp"
+#include "audio.hpp"
 
 struct Engine {
 
@@ -72,11 +73,13 @@ struct Engine {
         _boss_spawned = false;
         _boss_spawn_timer = 0.0f;
 
-        // create cube in center of scene
-
-        // to delete enemies:
-        // _enemy.erase(_enemy.begin()+5);
         // audio stuff
+        _audio_manager.initDevice();
+        _audio_manager.loadSound("shot", "../assets/audio/shot.wav");
+        _audio_manager.loadSound("eat", "../assets/audio/eat.wav");
+        _audio_manager.loadSound("hit", "../assets/audio/hit.wav");
+        _audio_manager.loadSound("boss", "../assets/audio/boss.wav");
+        _audio_manager.loadSound("contact", "../assets/audio/contact.wav");
 
         // true or false to able or disable
         SDL_SetWindowRelativeMouseMode(_window._window_p, false);
@@ -87,8 +90,11 @@ struct Engine {
     
     void destroy() {
         // destroy audio stuff
-        SDL_DestroyAudioStream (audio_stream);
+        /*
+                SDL_DestroyAudioStream(audio_stream);
         SDL_free(audio_file.buffer);
+        */
+
 
         // free OpenGL resources
         for (auto& light: _lights) light.destroy();
@@ -328,6 +334,7 @@ struct Engine {
                                       enemy_pos, enemy_radius)) {
                 // Daño recíproco
                 _player.take_damage(enemy._damage);
+                _audio_manager.playSound("contact");
                 enemy.die();
             }
         }
@@ -341,6 +348,7 @@ struct Engine {
                 // teleport boss nearby
                 _boss.teleport_near_player(_player.get_position());
                 // sound effect
+                _audio_manager.playSound("contact");
             }
         }
 
@@ -348,7 +356,7 @@ struct Engine {
         for (auto& projectile : _projectiles) {
             if (!projectile.is_active()) continue; // skip inactive bullets
             
-                            // boss coliision
+            // boss collision
             if (_boss._state == Enemy::State::ALIVE) {
                 if (check_sphere_collision(projectile.get_position(), 
                     projectile.get_radius(),
@@ -357,7 +365,8 @@ struct Engine {
                     {
                     // Apply damage to boss
                     _boss.take_damage(projectile.get_damage(), _player);                
-                    // Sound Effect            
+                    // Sound Effect           
+                    _audio_manager.playSound("hit"); 
                     // If you have piercing logic:
                     projectile._piercing -= 1;
                 }
@@ -376,7 +385,7 @@ struct Engine {
                     enemy.take_damage(projectile.get_damage(), _player);
                     
                     // Sound Effect
-
+                    _audio_manager.playSound("hit");
                     // If you have piercing logic:
                     projectile._piercing -= 1;
                 }  
@@ -398,7 +407,7 @@ struct Engine {
 
             // Configurar propiedades
             new_projectile.init(_player.get_position(), direction, _player._bullet_speed, _player._damage, _player._piercing_strength);
-            // sound effect
+            _audio_manager.playSound("shot");
         }
 
         // move all bullets
@@ -561,15 +570,18 @@ struct Engine {
     int width = 1280;
     int height = 720;
 
-    // audio 
-    struct AudioFile {
+    // audio
+    AudioManager _audio_manager;
+    /*
+        struct AudioFile {
         void init() {}
         void destroy() {}
         SDL_AudioSpec spec;
         Uint8* buffer;
         Uint32 buffer_size;
     };
-
     AudioFile audio_file;
     SDL_AudioStream* audio_stream;
+    */
 };
+
