@@ -15,6 +15,7 @@ struct Model {
         switch (primitive) {
             case Mesh::eCube: _meshes.front().init(); break;
             case Mesh::eSphere: _meshes.front().init(16, 16); break;
+            case Mesh::Wall: _meshes.front().init_wall(); break;
         }
         _materials.emplace_back()._texture_contribution = 0.0;
     }

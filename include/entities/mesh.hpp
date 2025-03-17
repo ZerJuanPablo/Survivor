@@ -6,13 +6,58 @@
 using namespace gl46core;
 
 struct Mesh {
-    enum Primitive { eCube, eSphere };
+    enum Primitive { eCube, eSphere, Wall};
     struct Vertex {
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec4 color;
         glm::vec2 uv;
     };
+
+    void init_wall(){
+        // create vertices
+        float n = -0.5f; // for readability
+        float p = +0.5f; // for readability
+        glm::vec4 cube_color;
+        cube_color = {0.961f, 0.749f, 0.478f, 1.0f};
+        std::vector<Vertex> vertices = {
+            {{n, n, p}, {0, 0, +1}, cube_color, {0.33, 0.75}}, // front
+            {{p, n, p}, {0, 0, +1}, cube_color, {0.66, 0.75}},
+            {{n, p, p}, {0, 0, +1}, cube_color, {0.33, 0.50}},
+            {{p, p, p}, {0, 0, +1}, cube_color, {0.66, 0.50}},
+            {{n, n, n}, {0, 0, -1}, cube_color, {0.33, 0.00}}, // back
+            {{p, n, n}, {0, 0, -1}, cube_color, {0.66, 0.00}},
+            {{n, p, n}, {0, 0, -1}, cube_color, {0.33, 0.25}},
+            {{p, p, n}, {0, 0, -1}, cube_color, {0.66, 0.25}},
+            {{n, n, n}, {-1, 0, 0}, cube_color, {0.00, 0.50}}, // left
+            {{n, n, p}, {-1, 0, 0}, cube_color, {0.00, 0.25}},
+            {{n, p, n}, {-1, 0, 0}, cube_color, {0.33, 0.50}},
+            {{n, p, p}, {-1, 0, 0}, cube_color, {0.33, 0.25}},
+            {{p, n, n}, {+1, 0, 0}, cube_color, {1.00, 0.50}}, // right
+            {{p, n, p}, {+1, 0, 0}, cube_color, {1.00, 0.25}},
+            {{p, p, n}, {+1, 0, 0}, cube_color, {0.66, 0.50}},
+            {{p, p, p}, {+1, 0, 0}, cube_color, {0.66, 0.25}},
+            {{n, p, n}, {0, +1, 0}, cube_color, {0.33, 0.25}}, // top
+            {{n, p, p}, {0, +1, 0}, cube_color, {0.33, 0.50}},
+            {{p, p, n}, {0, +1, 0}, cube_color, {0.66, 0.25}},
+            {{p, p, p}, {0, +1, 0}, cube_color, {0.66, 0.50}},
+            {{n, n, n}, {0, -1, 0}, cube_color, {0.33, 0.75}}, // bottom
+            {{n, n, p}, {0, -1, 0}, cube_color, {0.33, 1.00}},
+            {{p, n, n}, {0, -1, 0}, cube_color, {0.66, 0.75}},
+            {{p, n, p}, {0, -1, 0}, cube_color, {0.66, 1.00}},
+        };
+
+        // create indices
+        std::vector<uint32_t> indices = {
+            0, 1, 3, 3, 2, 0, // front
+            5, 4, 7, 7, 4, 6, // back
+            8, 9, 11, 11, 10, 8, // left
+            13, 12, 15, 15, 12, 14, // right
+            16, 17, 19, 19, 18, 16, // top
+            23, 21, 20, 23, 20, 22, // bottom
+        };
+        describe_layout(vertices, indices);    
+    }
 
     // load cube primitive
     void init() {
@@ -59,6 +104,7 @@ struct Mesh {
         };
         describe_layout(vertices, indices);
     }
+    
     // load sphere primitive
     void init(uint32_t sector_count, uint32_t stack_count) {
         // https://www.songho.ca/opengl/gl_sphere.html

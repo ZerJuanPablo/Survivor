@@ -23,7 +23,6 @@ using namespace gl46core;
 #include <glm/gtc/random.hpp>
 #include "entities/boss.hpp"
 #include "entities/upgrade.hpp"
-#include "audio.hpp"
 
 struct Engine {
 
@@ -60,8 +59,18 @@ struct Engine {
         _terrain.emplace_back().init(Mesh::eCube);
         _terrain[0]._transform._scale = glm::vec3(200.0f, 0.1f, 200.0f);
         _terrain[0]._transform._position = glm::vec3(0.0f, -5.0f, 0.0f);
-        // TO DO: WALLS
-
+        _terrain.emplace_back().init(Mesh::Wall);
+        _terrain[1]._transform._scale = glm::vec3(200.0f, 20.0f, 10.0f);
+        _terrain[1]._transform._position = glm::vec3(0.0f, -10.0f, 100.0f);
+        _terrain.emplace_back().init(Mesh::Wall);
+        _terrain[2]._transform._scale = glm::vec3(10.0f, 20.0f, 200.0f);
+        _terrain[2]._transform._position = glm::vec3(-100.0f, -10.0f, 0.0f);
+        _terrain.emplace_back().init(Mesh::Wall);
+        _terrain[3]._transform._scale = glm::vec3(10.0f, 20.0f, 200.0f);
+        _terrain[3]._transform._position = glm::vec3(100.0f, -10.0f, 0.0f);
+        _terrain.emplace_back().init(Mesh::Wall);
+        _terrain[4]._transform._scale = glm::vec3(200.0f, 2.0f, 10.0f);
+        _terrain[4]._transform._position = glm::vec3(0.0f, -5.0f, -100.0f);
 
         // create initial enemies
         setup_enemy_configs();
@@ -73,14 +82,6 @@ struct Engine {
         _boss_spawned = false;
         _boss_spawn_timer = 0.0f;
 
-        // audio stuff
-        _audio_manager.initDevice();
-        _audio_manager.loadSound("shot", "../assets/audio/shot.wav");
-        _audio_manager.loadSound("eat", "../assets/audio/eat.wav");
-        _audio_manager.loadSound("hit", "../assets/audio/hit.wav");
-        _audio_manager.loadSound("boss", "../assets/audio/boss.wav");
-        _audio_manager.loadSound("contact", "../assets/audio/contact.wav");
-
         // true or false to able or disable
         SDL_SetWindowRelativeMouseMode(_window._window_p, false);
 
@@ -90,11 +91,8 @@ struct Engine {
     
     void destroy() {
         // destroy audio stuff
-        /*
-                SDL_DestroyAudioStream(audio_stream);
+        SDL_DestroyAudioStream(audio_stream);
         SDL_free(audio_file.buffer);
-        */
-
 
         // free OpenGL resources
         for (auto& light: _lights) light.destroy();
@@ -168,7 +166,7 @@ struct Engine {
         new_enemy._model = _model_pool[config.model_key];
         
         // Configurar propiedades
-        new_enemy.init_from_config(config);
+        new_enemy.init_from_config(config, difficulty);
         new_enemy._model._transform._scale = glm::vec3(0.5f);
         new_enemy.set_position(position);
         new_enemy._state = Enemy::State::ALIVE;
@@ -177,10 +175,10 @@ struct Engine {
     void spawn_boss () {
         _boss.init_boss("../assets/models/Anglerfish.obj",
             glm::vec3(3.0f,3.0f,0.0f),
-            1.1f,
+            1.2f,
             20.0f,
             30.0f,
-            2.0f);
+            4.0f);
 
         _boss._state = Enemy::State::ALIVE;
         _boss_spawned = true;
@@ -247,7 +245,7 @@ struct Engine {
             glm::vec3(0.0f),       // center_offset    
             1.1f,       // movement speed
             3.0f,      // max_hp
-            1.0f,        // damage
+            5.0f,        // damage
             0.5f       // radius
         };
         
@@ -256,8 +254,8 @@ struct Engine {
             glm::vec3(0.0f),
             1.5f,
             1.0f,
-            1.0f,
-            0.3f
+            8.0f,
+            0.5f
         };
 
         _enemy_configs[EnemyType::BLOB] = {
@@ -265,8 +263,8 @@ struct Engine {
             glm::vec3(0.0f),
             0.8f,
             7.0f,
-            5.0f,
-            0.8f
+            10.0f,
+            0.6f
         };
     }
 
@@ -284,16 +282,24 @@ struct Engine {
         const float angle = glm::linearRand(0.0f, glm::two_pi<float>());
         const float radius = 12.0f;
         
+        // Define spawn limits
+        const float min_x = -92.0f, max_x = 92.0f;
+        const float min_z = -92.0f, max_z = 92.0f;
+
         // Genera 3 enemigos
         for (int i = 0; i < 2; ++i) {
             // Calcula posición aleatoria alrededor del jugador
             const float angle = glm::linearRand(0.0f, glm::two_pi<float>());
-            const glm::vec3 spawn_pos = player_pos + glm::vec3{
+            glm::vec3 spawn_pos = player_pos + glm::vec3{
                 glm::cos(angle) * radius,
                 0.0f,
                 glm::sin(angle) * radius
             };
-
+            
+            // Ensure the spawn position is within bounds
+            spawn_pos.x = glm::clamp(spawn_pos.x, min_x, max_x);
+            spawn_pos.z = glm::clamp(spawn_pos.z, min_z, max_z);
+            
             // Determina el tipo de enemigo con probabilidades
             const float rand = glm::linearRand(0.0f, 1.0f);
             EnemyType type;
@@ -334,7 +340,7 @@ struct Engine {
                                       enemy_pos, enemy_radius)) {
                 // Daño recíproco
                 _player.take_damage(enemy._damage);
-                _audio_manager.playSound("contact");
+                //_audio_manager.playSound("contact");
                 enemy.die();
             }
         }
@@ -348,7 +354,7 @@ struct Engine {
                 // teleport boss nearby
                 _boss.teleport_near_player(_player.get_position());
                 // sound effect
-                _audio_manager.playSound("contact");
+                //_audio_manager.playSound("contact");
             }
         }
 
@@ -366,7 +372,8 @@ struct Engine {
                     // Apply damage to boss
                     _boss.take_damage(projectile.get_damage(), _player);                
                     // Sound Effect           
-                    _audio_manager.playSound("hit"); 
+                    // audio stuff
+                    play_audio("../assets/audio/eat.wav");
                     // If you have piercing logic:
                     projectile._piercing -= 1;
                 }
@@ -385,12 +392,29 @@ struct Engine {
                     enemy.take_damage(projectile.get_damage(), _player);
                     
                     // Sound Effect
-                    _audio_manager.playSound("hit");
+                    play_audio("../assets/audio/hit.wav");
                     // If you have piercing logic:
                     projectile._piercing -= 1;
                 }  
             }
         }
+    }
+
+    void play_audio(const char *path){
+        SDL_InitSubSystem(SDL_INIT_AUDIO);
+        // load .wav file from disk
+        SDL_LoadWAV(path, &audio_file.spec, &audio_file.buffer, &audio_file.buffer_size);
+        // create an audio stream for default audio device
+        audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr, nullptr, nullptr);
+        if (audio_stream == nullptr) fmt::println("{}", SDL_GetError());
+        // get the format of the device (sample rate and such)
+        SDL_AudioSpec device_format;
+        SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_format, nullptr);
+        // set up the audio stream to convert from our .wav file sample rate to the device's sample rate
+        if(!SDL_SetAudioStreamFormat(audio_stream, &audio_file.spec, &device_format)) fmt::println("{}", SDL_GetError());
+        // load .wav into the audio stream and play
+        if(!SDL_PutAudioStreamData(audio_stream, audio_file.buffer, audio_file.buffer_size)) fmt::println("{}", SDL_GetError());
+        if(!SDL_ResumeAudioStreamDevice(audio_stream)) fmt::println("{}", SDL_GetError());
     }
 
     void update_bullets(float delta_time){
@@ -407,7 +431,7 @@ struct Engine {
 
             // Configurar propiedades
             new_projectile.init(_player.get_position(), direction, _player._bullet_speed, _player._damage, _player._piercing_strength);
-            _audio_manager.playSound("shot");
+            play_audio("../assets/audio/shot.wav");
         }
 
         // move all bullets
@@ -444,17 +468,26 @@ struct Engine {
     }
 
     void execute_frame() {
-        // update time for accurate Time:get_delta()
-        Time::update();
-        float delta_time = Time::get_delta();
-
-        // update input
-        execute_input();
-
         if (!_showing_upgrades) {
+            // update time for accurate Time:get_delta()
+            Time::update();
+            float delta_time = Time::get_delta();
+            
+            // update input
+            execute_input();
+            
+            _game_timer += delta_time;
             update_spawning(delta_time);
             update_boss(delta_time);
-    
+
+            //increase difficulty
+            _difficulty_timer += delta_time;
+            if (_difficulty_timer >= _difficulty_interval){
+                difficulty++;
+                _difficulty_timer = 0;
+            }
+
+
             // Actualizar enemigos
             for (auto& enemy : _enemies) {
                 enemy.update(Time::get_delta(), _player);
@@ -501,7 +534,7 @@ struct Engine {
         {
             // bind pipeline
             _pipeline.bind();
-            glUniform1f(0, Time::get_total());
+            glUniform1f(0, 0);
             glViewport(0, 0, 1280, 720);
             // clear screen before drawing
             glClearColor(0.08627451f, 0.19607843f, 0.35686275f, 1.0);
@@ -510,9 +543,10 @@ struct Engine {
             for (int i = 0; i < _lights.size(); i++) {
                 _lights[i].bind_read(i + 1, i * 3);
             }
+            for (auto& model: _terrain) model.draw(false);
+            glUniform1f(0, Time::get_total());
             _camera.bind();
             // draw the stuff
-            for (auto& model: _terrain) model.draw(false);
             _player.draw(false);
             for (auto& enemy: _enemies) enemy.draw(false);
 
@@ -530,7 +564,7 @@ struct Engine {
             generate_upgrades();
             _showing_upgrades = true;
         }
-        _showing_upgrades = _uiManager.render(_player, width, height, _showing_upgrades, _current_upgrades);
+        _showing_upgrades = _uiManager.render(_player, width, height, _showing_upgrades, _current_upgrades, _game_timer);
 
         SDL_GL_SwapWindow(_window._window_p);
         Input::flush();
@@ -563,6 +597,10 @@ struct Engine {
     bool _boss_spawned = false;
     std::vector<Upgrade> _current_upgrades;
     bool _showing_upgrades = false;
+    float _game_timer = 0.0f;
+    float _difficulty_timer = 0.0f;    // Tracks time since last difficulty increase
+    const float _difficulty_interval = 20.0f; // Time interval (1 min) to increase difficulty
+    int difficulty = 1; 
 
     // other
     bool _shadows_dirty = true;
@@ -571,9 +609,7 @@ struct Engine {
     int height = 720;
 
     // audio
-    AudioManager _audio_manager;
-    /*
-        struct AudioFile {
+    struct AudioFile {
         void init() {}
         void destroy() {}
         SDL_AudioSpec spec;
@@ -582,6 +618,5 @@ struct Engine {
     };
     AudioFile audio_file;
     SDL_AudioStream* audio_stream;
-    */
 };
 

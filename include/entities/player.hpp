@@ -6,6 +6,8 @@
 #include <cmath>
 #include "entities/model.hpp"
 #include "input.hpp"
+#include <iostream>
+
 
 struct Player {
 public:
@@ -114,6 +116,8 @@ private:
             movement = glm::normalize(movement);
             _model._transform._position += movement * _move_speed * delta_time;
         }
+        //add movement bloc
+        //if (get_position())
     }
 
     glm::vec3 calculate_mouse_world_position(float window_width, float window_height, const glm::mat4& inv_projection, const glm::mat4& inv_view) {

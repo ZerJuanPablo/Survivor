@@ -28,11 +28,12 @@ public:
         ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
     }
-    bool render(Player& player, int window_width, int window_height, bool showing_upgrades, const std::vector<Upgrade> upgrades) {
+    bool render(Player& player, int window_width, int window_height, bool showing_upgrades, const std::vector<Upgrade> upgrades, float time) {
         start_frame();
         show_fps_window();
         show_health_bar(player, window_width, window_height);
         show_xp_bar(player, window_width, window_height);
+        show_timer(time);
         
         // Mover la lógica de upgrades dentro del frame de ImGui
         if(showing_upgrades) {
@@ -79,6 +80,7 @@ private:
     }
 
     void show_fps_window() {
+        ImGui::SetNextWindowPos(ImVec2(30, 30), ImGuiCond_Always);
         ImGui::Begin("FPS", nullptr, 
             ImGuiWindowFlags_NoBackground | 
             ImGuiWindowFlags_NoDecoration |
@@ -86,6 +88,22 @@ private:
             ImGuiWindowFlags_NoNav |
             ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Text("%.1f fps", ImGui::GetIO().Framerate);
+        ImGui::End();
+    }
+
+    void show_timer(float elapsed_time) {
+        ImGui::SetNextWindowPos(ImVec2(30, 50), ImGuiCond_Always);
+        ImGui::Begin("Survival Time", nullptr, 
+            ImGuiWindowFlags_NoBackground | 
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_NoInputs | 
+            ImGuiWindowFlags_NoNav |
+            ImGuiWindowFlags_AlwaysAutoResize);
+    
+        int minutes = static_cast<int>(elapsed_time) / 60;
+        int seconds = static_cast<int>(elapsed_time) % 60;
+    
+        ImGui::Text("Time: %02d:%02d", minutes, seconds);
         ImGui::End();
     }
 

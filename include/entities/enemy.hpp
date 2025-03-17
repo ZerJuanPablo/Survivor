@@ -37,11 +37,11 @@ struct Enemy {
         _model._transform._scale = glm::vec3(0.5f);
     }
 
-    void init_from_config(const EnemyConfig& config){
-        _move_speed = config.move_speed;
-        max_hp = config.max_hp;
+    void init_from_config(const EnemyConfig& config, int difficulty){
+        _move_speed = config.move_speed * (1 + (0.1 * (difficulty-1)));
+        max_hp = config.max_hp + (5 * (difficulty-1));
         _hp = max_hp;
-        _damage = config.damage;
+        _damage = config.damage * (1 + (0.2 * (difficulty-1)));
         _radius = config.radius;
         _center_offset = config.center_offset;
     }
