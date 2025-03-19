@@ -23,6 +23,7 @@ using namespace gl46core;
 #include <glm/gtc/random.hpp>
 #include "entities/boss.hpp"
 #include "entities/upgrade.hpp"
+#include "entities/food.hpp"
 
 struct Engine {
 
@@ -245,7 +246,7 @@ struct Engine {
             glm::vec3(0.0f),       // center_offset    
             1.1f,       // movement speed
             3.0f,      // max_hp
-            5.0f,        // damage
+            10.0f,        // damage
             0.5f       // radius
         };
         
@@ -254,7 +255,7 @@ struct Engine {
             glm::vec3(0.0f),
             1.5f,
             1.0f,
-            8.0f,
+            12.0f,
             0.5f
         };
 
@@ -263,7 +264,7 @@ struct Engine {
             glm::vec3(0.0f),
             0.8f,
             7.0f,
-            10.0f,
+            15.0f,
             0.6f
         };
     }
@@ -324,6 +325,7 @@ struct Engine {
     }
 
     void check_collisions() {
+
         // Player vs Enemies
         const glm::vec3 player_pos = _player.get_position();
         const float player_radius = _player._radius;
@@ -383,10 +385,33 @@ struct Engine {
                     // Apply damage to enemy
                     enemy.take_damage(projectile.get_damage(), _player);
                     play_audio("../assets/audio/hit.wav");
+                    if (enemy._state == Enemy::State::DEAD)
+                    {
+                        float rand = glm::linearRand(0.0f,1.0f);
+                        if (rand < 0.05f)
+                        {
+                            _foods.emplace_back().init("../assets/models/Worm.obj");
+                            Food& new_food = _foods.back();
+                            new_food._model._transform._scale = glm::vec3(1.0f);                      
+                            new_food.set_position(enemy.get_position());
+                            new_food._state = Food::State::ALIVE;
+                        }
+                    }
                     projectile._piercing -= 1;
                 }  
             }
         }
+
+        for (auto& food : _foods) {
+            if (food._state == Food::State::DEAD) continue;
+
+            if (check_sphere_collision(player_pos, player_radius, food.get_position(), food._radius))
+            {
+                _player._hp += food.heal;
+                play_audio("../assets/audio/eat.wav");
+                food._state = Food::State::DEAD;
+            }
+        } 
     }
 
     void play_audio(const char *path){
@@ -427,6 +452,10 @@ struct Engine {
         for (auto& projectile : _projectiles)
         {
             projectile.update(delta_time);
+        }
+        for (auto& food : _foods)
+        {
+            food.update_rotation(delta_time);
         }
     }
 
@@ -495,6 +524,9 @@ struct Engine {
             return !projectile.is_active();
         });
 
+        std::erase_if(_foods, [](const Food& food) {
+            return food._state == Food::State::DEAD;
+        });
         // draw shadows
         if (_shadows_dirty) {
             // do this for each light
@@ -514,6 +546,7 @@ struct Engine {
                     if (_boss_spawned && _boss._state == Enemy::State::ALIVE) {
                         _boss.draw(false);
                     }
+                    for (auto& food: _foods) food.draw(false);
                 }
             }
             _shadows_dirty = false;
@@ -538,7 +571,7 @@ struct Engine {
             // draw the stuff
             _player.draw(false);
             for (auto& enemy: _enemies) enemy.draw(false);
-
+            for (auto& food: _foods) food.draw(false);
             for (auto& projectile : _projectiles) {
                 projectile.draw(false);
             }
@@ -570,6 +603,7 @@ struct Engine {
     Model _floor;
     std::vector<Enemy> _enemies;
     std::vector<Projectile> _projectiles;
+    std::vector<Food> _foods; 
     UIManager _uiManager;
     //Enemy _enemy;
     glm::vec3 offset = glm::vec3(-0.5f, 19.0f, -7.0f); // Offset con un desplazamiento en X

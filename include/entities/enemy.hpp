@@ -75,9 +75,6 @@ struct Enemy {
 
     virtual void die() {
         _state = State::DEAD;
-        // sound
-        // drop xp
-
         destroy();
     }   
 
@@ -105,7 +102,7 @@ struct Enemy {
     Model _model;
     glm::vec3 _center_offset = glm::vec3(0.0f);
     float _radius = 1.0f;
-    float base_xp = 3.0f;
+    float base_xp = 10.0f;
     State _state = State::ALIVE;
 
 private:
