@@ -70,7 +70,7 @@ public:
     }
 
     glm::vec3 get_position() const {
-        return _model._transform._position + _center_offset;  // Devolvemos la posición corregida
+        return _model._transform._position + _center_offset;
     }
 
     float get_radius() const { return _radius; } // Ajusta según tu modelo real
@@ -82,7 +82,7 @@ public:
     int _hp = 100;
     int _max_hp = 100;
     float _attack_speed = 1.0f;
-    float _bullet_speed = 12.0f;
+    float _bullet_speed = 15.0f;
     float _damage = 10.0f;
     int _piercing_strength = 1;
     float _luck = 1.0f;
@@ -104,6 +104,7 @@ private:
     void update_movement(float delta_time) {
         glm::vec3 movement(0.0f);
         
+
         if (Keys::down(SDLK_W)) movement.z += 1.0f;
         if (Keys::down(SDLK_S)) movement.z -= 1.0f;
         if (Keys::down(SDLK_A)) movement.x += 1.0f;
@@ -115,9 +116,10 @@ private:
         if (glm::length(movement) > 0) {
             movement = glm::normalize(movement);
             _model._transform._position += movement * _move_speed * delta_time;
+            _model._transform._position.x = glm::clamp(_model._transform._position.x, -95.0f, 95.0f);
+            _model._transform._position.z = glm::clamp(_model._transform._position.z, -95.0f, 95.0f);
         }
-        //add movement bloc
-        //if (get_position())
+        
     }
 
     glm::vec3 calculate_mouse_world_position(float window_width, float window_height, const glm::mat4& inv_projection, const glm::mat4& inv_view) {

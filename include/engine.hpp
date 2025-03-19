@@ -173,6 +173,7 @@ struct Engine {
     }
 
     void spawn_boss () {
+        play_audio("../assets/audio/jump.wav");
         _boss.init_boss("../assets/models/Anglerfish.obj",
             glm::vec3(3.0f,3.0f,0.0f),
             1.2f,
@@ -189,9 +190,8 @@ struct Engine {
     }
 
     void boss_slained() {
-        // give xp to player
         _lights.pop_back();
-        // audio
+        play_audio("../assets/audio/big_blob.wav");
         _boss.die();
         _boss_spawned = false;
     }
@@ -286,9 +286,8 @@ struct Engine {
         const float min_x = -92.0f, max_x = 92.0f;
         const float min_z = -92.0f, max_z = 92.0f;
 
-        // Genera 3 enemigos
-        for (int i = 0; i < 2; ++i) {
-            // Calcula posición aleatoria alrededor del jugador
+        
+        for (int i = 0; i < difficulty + 1; ++i) {
             const float angle = glm::linearRand(0.0f, glm::two_pi<float>());
             glm::vec3 spawn_pos = player_pos + glm::vec3{
                 glm::cos(angle) * radius,
@@ -325,7 +324,6 @@ struct Engine {
     }
 
     void check_collisions() {
-
         // Player vs Enemies
         const glm::vec3 player_pos = _player.get_position();
         const float player_radius = _player._radius;
@@ -340,7 +338,7 @@ struct Engine {
                                       enemy_pos, enemy_radius)) {
                 // Daño recíproco
                 _player.take_damage(enemy._damage);
-                //_audio_manager.playSound("contact");
+                play_audio("../assets/audio/contact.wav");
                 enemy.die();
             }
         }
@@ -349,12 +347,10 @@ struct Engine {
             if (check_sphere_collision(player_pos, player_radius,
                                        _boss.get_position(), _boss._radius))
             {
-                // Player and Boss both take damage (if you want mutual damage)
                 _player.take_damage(_boss._damage);
                 // teleport boss nearby
                 _boss.teleport_near_player(_player.get_position());
-                // sound effect
-                //_audio_manager.playSound("contact");
+                play_audio("../assets/audio/contact.wav");
             }
         }
 
@@ -369,19 +365,15 @@ struct Engine {
                     _boss.get_position(),
                     _boss._radius)) 
                     {
-                    // Apply damage to boss
                     _boss.take_damage(projectile.get_damage(), _player);                
-                    // Sound Effect           
-                    // audio stuff
-                    play_audio("../assets/audio/eat.wav");
-                    // If you have piercing logic:
+                    play_audio("../assets/audio/hit.wav");
                     projectile._piercing -= 1;
                 }
             } 
 
             for (auto& enemy : _enemies) {
                 if (enemy._state == Enemy::State::DEAD) continue;
-    
+
                 // Check collision
                 if (check_sphere_collision(projectile.get_position(), 
                                            projectile.get_radius(),
@@ -390,10 +382,7 @@ struct Engine {
                 {
                     // Apply damage to enemy
                     enemy.take_damage(projectile.get_damage(), _player);
-                    
-                    // Sound Effect
                     play_audio("../assets/audio/hit.wav");
-                    // If you have piercing logic:
                     projectile._piercing -= 1;
                 }  
             }
