@@ -24,11 +24,12 @@ using namespace gl46core;
 #include "entities/boss.hpp"
 #include "entities/upgrade.hpp"
 #include "entities/food.hpp"
+#include "state.hpp"
 
 struct Engine {
 
     void init() {
-        Time::init();
+        _gameState = GameState::MENU;
         _spawn_timer = 0.0f;
 
         _window.init(width, height, "OpenGL Renderer");
@@ -46,8 +47,7 @@ struct Engine {
         Light player_light;
         player_light.init({0.0, 0.3, 0.0}, {5.0, 5.0, 5.6}, 350);
         _lights.push_back(player_light);
-        //_lights[1].init({+3.0, +1.5, +4.0}, {.992, .984, .827}, 100);
-        
+
         // create players
         _player.init("../assets/models/Goldfish.obj");
         _player._model._transform._scale = glm::vec3(0.5f);
@@ -107,6 +107,40 @@ struct Engine {
         _uiManager.shutdown();
     }
     
+    void reset() {
+        _spawn_timer = 0.0f;
+        time_since_last_shot = 0.0f;
+        _boss_spawn_timer = 0.0f;
+        _boss_spawned = false;
+        _showing_upgrades = false;
+        _game_timer = 0.0f;
+        _difficulty_timer = 0.0f;
+        difficulty = 1;
+        _enemies.clear();
+        _projectiles.clear();
+        _foods.clear();
+        _current_upgrades.clear();
+        
+        _player._hp = 100;
+        _player._max_hp = 100;
+        _player._damage = 10.0f;
+        _player._move_speed = 5.0f;
+        _player._attack_speed = 1.0f;
+        _player._xp = 0;
+        _player._xp_needed = 100;
+        _player._xp_multiplier = 1.0f;
+        _player._piercing_strength = 1;
+        _player._bullet_speed = 15.0f;
+
+        _boss._state = Enemy::State::DEAD;
+        _boss_spawned = false;
+
+        _lights.clear();
+        Light player_light;
+        player_light.init({0.0, 0.3, 0.0}, {5.0, 5.0, 5.6}, 350);
+        _lights.push_back(player_light);
+    }
+
     auto execute_event(SDL_Event* event_p) -> SDL_AppResult {
         
         ImGui_ImplSDL3_ProcessEvent(event_p); // Forward your event to backend
@@ -485,36 +519,36 @@ struct Engine {
         }
     }
 
-    void execute_frame() {
-        if (!_showing_upgrades) {
-            // update time for accurate Time:get_delta()
-            Time::update();
-            float delta_time = Time::get_delta();
-            
-            // update input
-            execute_input();
-            
-            _game_timer += delta_time;
-            update_spawning(delta_time);
-            update_boss(delta_time);
+    void update_game(){
+        float delta_time;
+        Time::update();
+        delta_time = Time::get_delta();
+        if (_showing_upgrades) {
+            delta_time = 0;
+        }
+        // update input
+        execute_input();
+        
+        _game_timer += delta_time;
+        update_spawning(delta_time);
+        update_boss(delta_time);
 
-            //increase difficulty
-            _difficulty_timer += delta_time;
-            if (_difficulty_timer >= _difficulty_interval){
-                difficulty++;
-                _difficulty_timer = 0;
-            }
-
-
-            // Actualizar enemigos
-            for (auto& enemy : _enemies) {
-                enemy.update(Time::get_delta(), _player);
-            }
-    
-            update_bullets(delta_time);
-            check_collisions();
+        //increase difficulty
+        _difficulty_timer += delta_time;
+        if (_difficulty_timer >= _difficulty_interval){
+            difficulty++;
+            _difficulty_timer = 0;
         }
 
+
+        // Actualizar enemigos
+        for (auto& enemy : _enemies) {
+            enemy.update(delta_time, _player);
+        }
+
+        update_bullets(delta_time);
+        check_collisions();
+        
         // Eliminar enemigos muertos
         std::erase_if(_enemies, [](const Enemy& enemy) {
             return enemy._state == Enemy::State::DEAD;
@@ -588,10 +622,45 @@ struct Engine {
         }
         _showing_upgrades = _uiManager.render(_player, width, height, _showing_upgrades, _current_upgrades, _game_timer);
 
+    }
+
+    void check_game_over(){
+        if (_game_timer >= 600) _gameState = GameState::WIN;
+        if (_player._hp <= 0) _gameState = GameState::GAME_OVER;
+    }
+
+    void execute_frame() {
+        switch (_gameState) {
+            case GameState::MENU:
+                _uiManager.render_main_menu(_gameState, width, height);
+                break;
+            case GameState::RESET:
+                reset();
+                Time::init();
+                _gameState = GameState::PLAYING;
+                break;
+            case GameState::PLAYING:
+                update_game();
+                check_game_over();
+                break;
+            case GameState::GAME_OVER:
+                 _uiManager.render_over_menu(_gameState, width, height);
+                break;
+            case GameState::WIN:
+                _uiManager.render_over_menu(_gameState, width, height);
+                break;
+
+            case GameState::EXIT:
+                SDL_Event quit_event;
+                quit_event.type = SDL_EVENT_QUIT;
+                SDL_PushEvent(&quit_event);
+                return;                
+        }
         SDL_GL_SwapWindow(_window._window_p);
         Input::flush();
     }
 
+    GameState _gameState;
     Window _window;
     Camera _camera;
     Pipeline _pipeline;

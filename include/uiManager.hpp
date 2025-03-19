@@ -5,6 +5,7 @@
 #include <imgui_impl_opengl3.h>
 #include "entities/player.hpp"
 #include "entities/upgrade.hpp"
+#include "state.hpp"
 
 class UIManager {
 public:
@@ -67,7 +68,109 @@ public:
         end_frame();
         return showing_upgrades;
     }
-private:
+
+    void render_main_menu(GameState& gameState, int window_width, int window_height) {
+        start_frame();
+    
+        // Centrar ventana
+        ImGui::SetNextWindowPos(ImVec2(window_width / 2 - 200, window_height / 3 - 50));
+        ImGui::SetNextWindowSize(ImVec2(315, 300));
+
+        ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+
+        // Nombre del juego en grande
+        ImGui::SetWindowFontScale(3.0f);
+        ImGui::Text("REEF SURVIVOR");
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        // Botón Start Game
+        if (ImGui::Button("Start Game", ImVec2(300, 60))) {
+            gameState = GameState::RESET;
+        }
+
+        ImGui::Spacing();
+
+        // Botón Exit
+        if (ImGui::Button("Exit", ImVec2(300, 60))) {
+            gameState = GameState::EXIT;
+        }
+
+        
+        ImGui::End();
+
+        end_frame();
+    }
+
+    void render_over_menu(GameState& gameState, int window_width, int window_height) {
+        start_frame();
+    
+        // Centrar ventana
+        ImGui::SetNextWindowPos(ImVec2(window_width / 2 - 200, window_height / 3 - 50));
+        ImGui::SetNextWindowSize(ImVec2(315, 300));
+
+        ImGui::Begin("Game Over Menu", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+
+        // Nombre del juego en grande
+        ImGui::SetWindowFontScale(3.0f);
+        ImGui::Text("Game Over");
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        // Botón Start Game
+        if (ImGui::Button("Restart", ImVec2(300, 60))) {
+            gameState = GameState::RESET;
+        }
+        ImGui::Spacing();
+
+        // Botón Exit
+        if (ImGui::Button("Exit", ImVec2(300, 60))) {
+            gameState = GameState::EXIT;
+        }
+        
+        ImGui::End();
+
+        end_frame();
+    }
+
+    void render_win_menu(GameState& gameState, int window_width, int window_height) {
+        start_frame();
+    
+        // Centrar ventana
+        ImGui::SetNextWindowPos(ImVec2(window_width / 2 - 200, window_height / 3 - 50));
+        ImGui::SetNextWindowSize(ImVec2(315, 300));
+
+        ImGui::Begin("Win", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+
+        // Nombre del juego en grande
+        ImGui::SetWindowFontScale(3.0f);
+        ImGui::Text("Congratulations you survived 10min");
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        // Botón Start Game
+        if (ImGui::Button("Restart", ImVec2(300, 60))) {
+            gameState = GameState::RESET;
+        }
+        ImGui::Spacing();
+
+        // Botón Exit
+        if (ImGui::Button("Exit", ImVec2(300, 60))) {
+            gameState = GameState::EXIT;
+        }
+        
+        ImGui::End();
+
+        end_frame();
+    }
+
+    private:
     void start_frame() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();

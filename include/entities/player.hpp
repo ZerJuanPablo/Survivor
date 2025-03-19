@@ -32,11 +32,7 @@ public:
 
     void take_damage(float damage) {
         _hp -= damage;
-        // AudioManager::getInstance().play("eat");
         if (_hp < 0) _hp = 0;
-        if (_hp == 0) {
-            // Game over
-        }
     }
 
     void draw(bool bind_material = false) {
