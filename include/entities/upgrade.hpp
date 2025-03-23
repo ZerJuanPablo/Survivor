@@ -9,7 +9,7 @@ enum class Rarity {
     UNCOMMON,
     RARE    
 };
-// Clase Upgrade que contiene el ID de la upgrade y los efectos asociados.
+
 struct Upgrade {
     std::string name;
     std::string description;

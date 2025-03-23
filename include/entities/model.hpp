@@ -44,12 +44,10 @@ struct Model {
             fmt::println("{}", importer.GetErrorString());
             return;
         }
-        fmt::println("Loading model: {}", model_path);
 
         // figure out path to the model root for stuff like .obj, which puts its assets into sub-folders
         size_t separator_index = model_path.find_last_of('/');
         std::string model_root = model_path.substr(0, separator_index + 1);
-        fmt::println("Model root: {}", model_root);
 
         // create materials and textures
         _materials.resize(scene_p->mNumMaterials);
@@ -62,34 +60,32 @@ struct Model {
             material_p->Get(AI_MATKEY_SHININESS, material._specular);
             material_p->Get(AI_MATKEY_SHININESS_STRENGTH, material._specular_shininess);
 
-            // load lighting colors
-            // Cargar colores del material
             aiColor3D color;
 
-            // Ka (Color Ambiental)
+            // Ka 
             if (material_p->Get(AI_MATKEY_COLOR_AMBIENT, color) == AI_SUCCESS) {
-                material._ambient = glm::vec3(color.r, color.g, color.b); // Asume que `Material` usa glm::vec3
+                material._ambient = glm::vec3(color.r, color.g, color.b); 
             } else {
-                material._ambient = glm::vec3(0.1f); // Valor predeterminado si no se encuentra
+                material._ambient = glm::vec3(0.1f); 
             }
 
-            // Kd (Color Difuso)
+            // Kd 
             if (material_p->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
                 material._diffuse = glm::vec3(color.r, color.g, color.b);
             } else {
-                material._diffuse = glm::vec3(0.76f, 0.70f, 0.50f); // Valor predeterminado
+                material._diffuse = glm::vec3(0.76f, 0.70f, 0.50f); 
             }
 
-            // Ks (Color Especular)
+            // Ks 
             if (material_p->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS) {
                 material._specularColor = glm::vec3(color.r, color.g, color.b);
             } else {
-                material._specularColor = glm::vec3(0.1f, 0.1f, 0.1f); // Valor predeterminado
+                material._specularColor = glm::vec3(0.1f, 0.1f, 0.1f); 
             }
 
             // Ns (Shininess)
             if (material_p->Get(AI_MATKEY_SHININESS, material._specular_shininess) != AI_SUCCESS) {
-                material._specular_shininess = 4.0f; // Valor predeterminado
+                material._specular_shininess = 4.0f; 
             }
 
 
@@ -126,15 +122,14 @@ struct Model {
 void draw(bool color = true) {
     _transform.bind();
     for (uint32_t i = 0; i < _meshes.size(); i++) {
-        // Obtén el índice del material asociado con la malla
         uint32_t material_index = _meshes[i]._material_index;
 
         if (material_index < _textures.size() && color) {
-            _textures[material_index].bind(); // Enlaza la textura (si aplica)
+            _textures[material_index].bind(); 
         }
-        _materials[material_index].bind();   // Enlaza el material
+        _materials[material_index].bind();   
 
-        _meshes[i].draw();                   // Dibuja la malla
+        _meshes[i].draw();                   
     }
     }
 
@@ -150,6 +145,6 @@ void draw(bool color = true) {
 
     std::vector<Mesh> _meshes;
     std::vector<Material> _materials;
-    std::vector<Texture> _textures; // TODO: move into material
+    std::vector<Texture> _textures; 
     Transform _transform;
 };

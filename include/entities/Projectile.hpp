@@ -11,7 +11,6 @@ class Projectile {
 public:
     Projectile() = default;
 
-    // Inicializa la bala con posición inicial, dirección, velocidad, etc.
     void init(const glm::vec3& position, const glm::vec3& direction, float speed, float damage, int piercing) {
         _position = position;
         _direction = glm::normalize(direction);
@@ -22,16 +21,13 @@ public:
 
         _lifespan = 2.0f;
 
-        // Si quieres usar un modelo para la bala (una esfera pequeña, por ejemplo):
-        _model.init(Mesh::eSphere);                 // Carga un mesh de esfera
-        _model._transform._scale = glm::vec3(0.2f); // Escala pequeña
-        _model._transform._position = _position;    // Alinea transform con posición
-
-        // Radio para colisiones:
+        _model.init(Mesh::eSphere);                 
+        _model._transform._scale = glm::vec3(0.2f); 
+        _model._transform._position = _position;    
         _radius = 0.2f;
     }
 
-    // Actualiza la posición de la bala
+    
     void update(float deltaTime) {
         if (_piercing <= 0){
             deactivate();
@@ -48,18 +44,15 @@ public:
         _model._transform._position = _position;
     }
 
-    // Dibuja la bala
     void draw(bool bind_material = false) {
         _model.draw(bind_material);
     }
 
-    // Getters
     bool is_active() const { return _active; }
     const glm::vec3& get_position() const { return _position; }
     float get_radius() const { return _radius; }
     float get_damage() const { return _damage; }
 
-    // Permite desactivarla (si impacta a un enemigo, etc.)
     void deactivate() { _active = false; }
 
     float _damage;

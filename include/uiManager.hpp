@@ -14,12 +14,10 @@ public:
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         
-        // Configurar estilo
         ImGui::StyleColorsDark();
         ImGuiStyle& style = ImGui::GetStyle();
         style.WindowRounding = 3.0f;
         
-        // Inicializar backends
         ImGui_ImplSDL3_InitForOpenGL(window, context);
         ImGui_ImplOpenGL3_Init("#version 460 core");
     }
@@ -36,12 +34,11 @@ public:
         show_xp_bar(player, window_width, window_height);
         show_timer(time);
         
-        // Mover la lógica de upgrades dentro del frame de ImGui
         if(showing_upgrades) {
             ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
             ImGui::SetNextWindowFocus(); 
             ImGui::SetNextWindowPos(ImVec2(window_width/2.0f, window_height/2.0f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-            ImGui::Begin("Mejoras disponibles", nullptr, 
+            ImGui::Begin("Choose an upgrade", nullptr, 
                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
             
             for(int i = 0; i < upgrades.size(); ++i) {
@@ -52,7 +49,6 @@ public:
                     upgrade.apply(player);
                     showing_upgrades = false;
                     player.setShowLevelUpWindow(false);
-                    printf("Click");
                 }
                 
                 if (ImGui::IsItemHovered()) {
@@ -72,48 +68,52 @@ public:
     void render_main_menu(GameState& gameState, int window_width, int window_height) {
         start_frame();
     
-        // Centrar ventana
         ImGui::SetNextWindowPos(ImVec2(window_width / 2 - 200, window_height / 3 - 50));
-        ImGui::SetNextWindowSize(ImVec2(315, 300));
-
+        ImGui::SetNextWindowSize(ImVec2(315, 350));  // Aumenté la altura para el nuevo texto
+    
         ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-
-        // Nombre del juego en grande
+    
+        // Título del juego
         ImGui::SetWindowFontScale(3.0f);
         ImGui::Text("REEF SURVIVOR");
         ImGui::SetWindowFontScale(1.0f);
-
+    
+        ImGui::Spacing();
+        
+        // Texto explicativo
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));  // Color amarillo
+        ImGui::SetWindowFontScale(1.3f);
+        ImGui::TextWrapped("Survive 10 minutes\nto win!");
+        ImGui::PopStyleColor();
+        ImGui::SetWindowFontScale(1.0f);
+    
         ImGui::Spacing();
         ImGui::Spacing();
-
-        // Botón Start Game
+    
+        // Botones
         if (ImGui::Button("Start Game", ImVec2(300, 60))) {
             gameState = GameState::RESET;
         }
-
+    
         ImGui::Spacing();
-
-        // Botón Exit
+    
         if (ImGui::Button("Exit", ImVec2(300, 60))) {
             gameState = GameState::EXIT;
         }
-
-        
+    
         ImGui::End();
-
+    
         end_frame();
     }
 
     void render_over_menu(GameState& gameState, int window_width, int window_height) {
         start_frame();
     
-        // Centrar ventana
         ImGui::SetNextWindowPos(ImVec2(window_width / 2 - 200, window_height / 3 - 50));
         ImGui::SetNextWindowSize(ImVec2(315, 300));
 
         ImGui::Begin("Game Over Menu", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
-        // Nombre del juego en grande
         ImGui::SetWindowFontScale(3.0f);
         ImGui::Text("Game Over");
         ImGui::SetWindowFontScale(1.0f);
@@ -121,13 +121,11 @@ public:
         ImGui::Spacing();
         ImGui::Spacing();
 
-        // Botón Start Game
         if (ImGui::Button("Restart", ImVec2(300, 60))) {
             gameState = GameState::RESET;
         }
         ImGui::Spacing();
 
-        // Botón Exit
         if (ImGui::Button("Exit", ImVec2(300, 60))) {
             gameState = GameState::EXIT;
         }
@@ -140,13 +138,11 @@ public:
     void render_win_menu(GameState& gameState, int window_width, int window_height) {
         start_frame();
     
-        // Centrar ventana
         ImGui::SetNextWindowPos(ImVec2(window_width / 2 - 200, window_height / 3 - 50));
         ImGui::SetNextWindowSize(ImVec2(315, 300));
 
         ImGui::Begin("Win", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
-        // Nombre del juego en grande
         ImGui::SetWindowFontScale(3.0f);
         ImGui::Text("Congratulations you survived 10min");
         ImGui::SetWindowFontScale(1.0f);
@@ -154,13 +150,11 @@ public:
         ImGui::Spacing();
         ImGui::Spacing();
 
-        // Botón Start Game
         if (ImGui::Button("Restart", ImVec2(300, 60))) {
             gameState = GameState::RESET;
         }
         ImGui::Spacing();
 
-        // Botón Exit
         if (ImGui::Button("Exit", ImVec2(300, 60))) {
             gameState = GameState::EXIT;
         }
@@ -231,20 +225,18 @@ public:
         char overlay[32];
         snprintf(overlay, sizeof(overlay), "HP: %d/%d", player._hp, player._max_hp);
 
-        // Obtener posición de la barra
         ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
         ImVec2 bar_size = ImVec2(bar_width, bar_height);
         
-        // Dibujar barra de progreso
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
-        ImGui::ProgressBar(hp_percent, bar_size, ""); // Sin texto para evitar doble overlay
+        ImGui::ProgressBar(hp_percent, bar_size, ""); 
         ImGui::PopStyleColor();
 
-        // Dibujar texto centrado en la barra
+        
         ImVec2 text_size = ImGui::CalcTextSize(overlay);
         ImVec2 text_pos = ImVec2(
-            cursor_pos.x + (bar_size.x - text_size.x) * 0.5f, // Centrar horizontalmente
-            cursor_pos.y + (bar_size.y - text_size.y) * 0.5f  // Centrar verticalmente
+            cursor_pos.x + (bar_size.x - text_size.x) * 0.5f, 
+            cursor_pos.y + (bar_size.y - text_size.y) * 0.5f  
         );
 
         ImGui::GetWindowDrawList()->AddText(text_pos, IM_COL32(255, 255, 255, 255), overlay);
@@ -273,20 +265,17 @@ public:
         char overlay[32];
         snprintf(overlay, sizeof(overlay), "XP: %d/%d", player._xp, player._xp_needed);
 
-        // Obtener posición de la barra
         ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
         ImVec2 bar_size = ImVec2(bar_width, bar_height);
         
-        // Dibujar barra de progreso
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.1f, 0.3f, 0.8f, 1.0f));
-        ImGui::ProgressBar(xp_percent, bar_size, ""); // Sin texto para evitar doble overlay
+        ImGui::ProgressBar(xp_percent, bar_size, ""); 
         ImGui::PopStyleColor();
 
-        // Dibujar texto centrado en la barra
         ImVec2 text_size = ImGui::CalcTextSize(overlay);
         ImVec2 text_pos = ImVec2(
-            cursor_pos.x + (bar_size.x - text_size.x) * 0.5f, // Centrar horizontalmente
-            cursor_pos.y + (bar_size.y - text_size.y) * 0.5f  // Centrar verticalmente
+            cursor_pos.x + (bar_size.x - text_size.x) * 0.5f, 
+            cursor_pos.y + (bar_size.y - text_size.y) * 0.5f  
         );
 
         ImGui::GetWindowDrawList()->AddText(text_pos, IM_COL32(255, 255, 255, 255), overlay);

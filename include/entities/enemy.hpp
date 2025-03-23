@@ -33,23 +33,18 @@ struct Enemy {
 
     void init(const std::string& model_path, const glm::vec3& center_offset = glm::vec3(0.0f)) {
         _model.init(model_path);
-        _center_offset = center_offset;  // Ajustar manualmente si es necesario
+        _center_offset = center_offset;
         _model._transform._scale = glm::vec3(0.5f);
     }
 
     void init_from_config(const EnemyConfig& config, int difficulty){
-        _move_speed = config.move_speed * (1 + (0.1 * (difficulty-1)));
-        max_hp = config.max_hp + (5 * (difficulty-1));
+        _move_speed = config.move_speed * (1 + (0.2 * (difficulty-1)));
+        max_hp = config.max_hp + (4 * (difficulty-1));
         _hp = max_hp;
         _damage = config.damage * (1 + (0.2 * (difficulty-1)));
         _radius = config.radius;
         _center_offset = config.center_offset;
     }
-    /*
-    ~Enemy() {
-        destroy();
-    }
-    */
 
 
     void destroy() {
@@ -87,11 +82,11 @@ struct Enemy {
     }
     
     void set_position(const glm::vec3& pos) {
-        _model._transform._position = pos - _center_offset;  // Ajustamos la posición real
+        _model._transform._position = pos - _center_offset;
     }
 
     glm::vec3 get_position() const {
-        return _model._transform._position + _center_offset;  // Devolvemos la posición corregida
+        return _model._transform._position + _center_offset;
     }
 
     float _move_speed = 0.5f;

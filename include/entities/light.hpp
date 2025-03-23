@@ -48,6 +48,7 @@ struct Light {
         // bind the entire cube map for reading
         glBindTextureUnit(tex_unit, _shadow_texture);
     }
+    
     glm::vec3 _position = {0, 0, 0};
     glm::vec3 _color = {1, 1, 1};
     float _range = 100;
@@ -57,4 +58,5 @@ struct Light {
     GLuint _shadow_texture; // cube map (6 textures)
     std::array<glm::mat4x4, 6> _shadow_views; // one view for each texture in cube map
     glm::mat4x4 _shadow_projection;
+    bool active = true;
 };

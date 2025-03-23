@@ -14,7 +14,7 @@ public:
 
     void init(const std::string& model_path, const glm::vec3& center_offset = glm::vec3(0.0f)) {
         _model.init(model_path);
-        _center_offset = center_offset;  // Ajustar manualmente si es necesario
+        _center_offset = center_offset;  
     }
 
     void destroy() {
@@ -44,7 +44,7 @@ public:
         if (_xp >= _xp_needed){
             _level++;
             _xp = _xp % _xp_needed;
-            _xp_needed = _xp_needed * 1.15f;
+            _xp_needed = _xp_needed * 1.10f;
             _showLevelUpWindow = true;
         }
     }
@@ -58,7 +58,7 @@ public:
     }
     
     void set_position(const glm::vec3& pos) {
-        _model._transform._position = pos - _center_offset;  // Ajustamos la posición real
+        _model._transform._position = pos - _center_offset;  
     }
 
     glm::vec3 get_mouse_world_position() const {
@@ -69,7 +69,7 @@ public:
         return _model._transform._position + _center_offset;
     }
 
-    float get_radius() const { return _radius; } // Ajusta según tu modelo real
+    float get_radius() const { return _radius; } 
 
     bool showLevelUpWindow() const { return _showLevelUpWindow; }
     void setShowLevelUpWindow(bool show) { _showLevelUpWindow = show; }
@@ -77,7 +77,7 @@ public:
     float _move_speed = 5.0f;
     int _hp = 100;
     int _max_hp = 100;
-    float _attack_speed = 1.0f;
+    float _attack_speed = 0.5f;
     float _bullet_speed = 15.0f;
     float _damage = 10.0f;
     int _piercing_strength = 1;
@@ -91,7 +91,7 @@ public:
     int _xp_needed = 100.0f;
     float _radius = 0.8f;
     Model _model;
-    glm::vec3 _center_offset = glm::vec3(0.0f); // Desplazamiento del centro
+    glm::vec3 _center_offset = glm::vec3(0.0f); 
     bool _showLevelUpWindow = false;
 
 private:
@@ -105,9 +105,6 @@ private:
         if (Keys::down(SDLK_S)) movement.z -= 1.0f;
         if (Keys::down(SDLK_A)) movement.x += 1.0f;
         if (Keys::down(SDLK_D)) movement.x -= 1.0f;
-        
-        if (Keys::pressed(SDLK_Q)) _hp -= 2; // Debugging
-        if (Keys::pressed(SDLK_E)) _xp += 99; // Debugging
 
         if (glm::length(movement) > 0) {
             movement = glm::normalize(movement);
@@ -121,25 +118,25 @@ private:
     glm::vec3 calculate_mouse_world_position(float window_width, float window_height, const glm::mat4& inv_projection, const glm::mat4& inv_view) {
         auto [mouse_x, mouse_y] = Mouse::position();
 
-        // Convertimos la posición del mouse a coordenadas normalizadas (-1 a 1)
+        // -Normalize mouse position
         float normalized_x = (2.0f * mouse_x) / window_width - 1.0f;
         float normalized_y = 1.0f - (2.0f * mouse_y) / window_height;
         
-        // Posición en espacio de clip
+        // Clip space position
         glm::vec4 clip_space_pos(normalized_x, normalized_y, -1.0f, 1.0f);
 
-        // Convertir a espacio de cámara
+        // Camera space position
         glm::vec4 camera_space_pos = inv_projection * clip_space_pos;
-        camera_space_pos /= camera_space_pos.w; // Proyección perspectiva
+        camera_space_pos /= camera_space_pos.w; 
 
-        // Convertir a espacio mundial
+        // World space position
         glm::vec4 world_space_pos = inv_view * camera_space_pos;
 
-        // **Raycasting hasta el suelo (Y = 0)**
-        glm::vec3 ray_origin = glm::vec3(inv_view[3]);  // Posición de la cámara en el mundo
+        // **Raycasting**
+        glm::vec3 ray_origin = glm::vec3(inv_view[3]);  
         glm::vec3 ray_direction = glm::normalize(glm::vec3(world_space_pos) - ray_origin);
 
-        // Intersección con el plano Y = 0
+        // Intersect ray with y = 0 plane
         float t = -ray_origin.y / ray_direction.y;
         glm::vec3 world_mouse_pos = ray_origin + ray_direction * t;
 
@@ -147,11 +144,10 @@ private:
     }
 
     void update_rotation(const glm::vec3& world_mouse_pos) {
-        // Verificar si la posición del mouse es válida
         if (!std::isfinite(world_mouse_pos.x) || !std::isfinite(world_mouse_pos.z)) {
-            return; // Evita rotaciones inválidas
+            return; 
         }
-        // Hacer que el modelo apunte hacia la posición del mouse
+        // Rotate model to mouse
         _model.look_at(world_mouse_pos);
     }
 

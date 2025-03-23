@@ -26,7 +26,7 @@ public:
 
     void update(float delta_time, Player& player) override {
         Enemy::update(delta_time, player);
-        _move_speed = _move_speed - 0.003f;
+        _move_speed = _move_speed + 0.003f;
     }
 
     void die() override {
@@ -41,6 +41,7 @@ public:
         float distance_z = dis(gen);
         glm::vec3 new_pos = player_pos + glm::vec3(distance_x, 0.0f, distance_z);
         set_position(new_pos);
+        _move_speed = 1.5f;
     }
     float base_xp = 20.0f;
 private:

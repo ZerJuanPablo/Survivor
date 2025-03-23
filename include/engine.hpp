@@ -86,14 +86,20 @@ struct Engine {
         // true or false to able or disable
         SDL_SetWindowRelativeMouseMode(_window._window_p, false);
 
+        // init audio
+        SDL_InitSubSystem(SDL_INIT_AUDIO);
+
         // init ui manager
         _uiManager.init(_window._window_p, _window._context);
     }
     
     void destroy() {
-        // destroy audio stuff
-        SDL_DestroyAudioStream(audio_stream);
-        SDL_free(audio_file.buffer);
+        for (auto& audio : active_audio_streams) {
+            SDL_DestroyAudioStream(audio.stream);
+        }
+        active_audio_streams.clear();
+        
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
 
         // free OpenGL resources
         for (auto& light: _lights) light.destroy();
@@ -208,24 +214,40 @@ struct Engine {
     }
 
     void spawn_boss () {
+        const glm::vec3 player_pos = _player.get_position();
+        const float angle = glm::linearRand(0.0f, glm::two_pi<float>());
+        const float radius = 12.0f;
+        
+        // Define spawn limits
+        const float min_x = -92.0f, max_x = 92.0f;
+        const float min_z = -92.0f, max_z = 92.0f;
+        glm::vec3 spawn_pos = player_pos + glm::vec3{
+            glm::cos(angle) * radius,
+            0.0f,
+            glm::sin(angle) * radius
+        };
+        
+        // Ensure the spawn position is within bounds
+        spawn_pos.x = glm::clamp(spawn_pos.x, min_x, max_x);
+        spawn_pos.z = glm::clamp(spawn_pos.z, min_z, max_z);
+
         play_audio("../assets/audio/jump.wav");
-        _boss.init_boss("../assets/models/Anglerfish.obj",
-            glm::vec3(3.0f,3.0f,0.0f),
-            1.2f,
-            20.0f,
-            30.0f,
-            4.0f);
+        _boss.init_boss(
+            "../assets/models/Anglerfish.obj",
+            glm::vec3(spawn_pos.x, 0.0f, spawn_pos.z),
+            1.5f + (0.2f * difficulty), 
+            80.0f + (20.0f * difficulty),
+            22.0f + (3.0f * difficulty),
+            1.0f);
 
         _boss._state = Enemy::State::ALIVE;
         _boss_spawned = true;
-        
-        Light _bosslight;
-        _bosslight.init({0.0, 1.0, 0.0}, {4.1f, 4.4f, 4.6f}, 500);
-        _lights.push_back(_bosslight);
+        _lights.emplace_back().init({0.0, 1.0, 0.0}, {4.1f, 4.4f, 4.6f}, 500);
+
     }
 
     void boss_slained() {
-        _lights.pop_back();
+        _lights[1]._position = glm::vec3(120.0f, 120.0f, 120.0f);
         play_audio("../assets/audio/big_blob.wav");
         _boss.die();
         _boss_spawned = false;
@@ -258,28 +280,30 @@ struct Engine {
         _current_upgrades.clear();
         
         static const std::vector<Upgrade> all_upgrades = {
-            {"Damage up", "+10% damage", Rarity::COMMON, [](Player& p){ p._damage *= 1.1f; }},
+            {"Damage up", "+10% damage", Rarity::COMMON, [](Player& p){ p._damage *= 1.10f; }},
             {"Speed up", "+5% speed", Rarity::COMMON, [](Player& p){ p._move_speed *= 1.05f; }},
-            {"Attack speed up", "+10% attack speed up", Rarity::COMMON, [](Player& p){ p._attack_speed *= 1.1f; }},
-            {"XP mult", "+0.2 XP mult", Rarity::UNCOMMON, [](Player& p){ p._xp_multiplier += 0.2f; }},
+            {"Attack speed up", "+10% attack speed up", Rarity::UNCOMMON, [](Player& p){ p._attack_speed *= 1.1f; }},
+            {"XP mult", "+0.3 XP mult", Rarity::COMMON, [](Player& p){ p._xp_multiplier += 0.3f; }},
             {"Strong Damage up", "+25% damage", Rarity::UNCOMMON, [](Player& p){ p._damage *= 1.25f; }},
-            {"Max HP up", "+50 HP", Rarity::UNCOMMON, [](Player& p){ p._max_hp += 20; }},
+            {"Max HP up", "+50 HP", Rarity::UNCOMMON, [](Player& p){ p._max_hp += 50; }},
             {"Piercing up", "+1 piercing", Rarity::RARE, [](Player& p){ p._piercing_strength += 1; }},
-            
+            {"Strong Attack speed up", "+15% attack speed up", Rarity::RARE, [](Player& p){ p._attack_speed *= 1.15f; }},
+
         };
         
         // Seleccionar 3 aleatorias con ponderación por rareza
         for(int i = 0; i < 3; ++i) {
             _current_upgrades.push_back(select_random_upgrade(all_upgrades));
         }
+        play_audio("../assets/audio/lvlup.wav");
     }
 
     void setup_enemy_configs() {
         _enemy_configs[EnemyType::SHARK] = {
             "shark",    // model_key
             glm::vec3(0.0f),       // center_offset    
-            1.1f,       // movement speed
-            3.0f,      // max_hp
+            1.5f,       // movement speed
+            5.0f,      // max_hp
             10.0f,        // damage
             0.5f       // radius
         };
@@ -287,7 +311,7 @@ struct Engine {
         _enemy_configs[EnemyType::KOI] = {
             "koi",
             glm::vec3(0.0f),
-            1.5f,
+            2.0f,
             1.0f,
             12.0f,
             0.5f
@@ -296,8 +320,8 @@ struct Engine {
         _enemy_configs[EnemyType::BLOB] = {
             "blob",
             glm::vec3(0.0f),
-            0.8f,
-            7.0f,
+            1.2f,
+            11.0f,
             15.0f,
             0.6f
         };
@@ -352,7 +376,6 @@ struct Engine {
             create_enemy(type, spawn_pos);
         }
     }
-
     bool check_sphere_collision (const glm::vec3& pos1, float radius1, const glm::vec3& pos2, float radius2) {
         float distance = glm::distance(pos1, pos2);
         return distance < radius1 + radius2;
@@ -401,7 +424,10 @@ struct Engine {
                     _boss.get_position(),
                     _boss._radius)) 
                     {
-                    _boss.take_damage(projectile.get_damage(), _player);                
+                    _boss.take_damage(projectile.get_damage(), _player);
+                    if (_boss._hp <= 0) {
+                        boss_slained();
+                    }                
                     play_audio("../assets/audio/hit.wav");
                     projectile._piercing -= 1;
                 }
@@ -441,28 +467,47 @@ struct Engine {
 
             if (check_sphere_collision(player_pos, player_radius, food.get_position(), food._radius))
             {
-                _player._hp += food.heal;
+                _player._hp = glm::clamp(_player._hp + food.heal, 0, _player._max_hp);
                 play_audio("../assets/audio/eat.wav");
                 food._state = Food::State::DEAD;
             }
         } 
     }
 
-    void play_audio(const char *path){
-        SDL_InitSubSystem(SDL_INIT_AUDIO);
-        // load .wav file from disk
-        SDL_LoadWAV(path, &audio_file.spec, &audio_file.buffer, &audio_file.buffer_size);
-        // create an audio stream for default audio device
-        audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr, nullptr, nullptr);
-        if (audio_stream == nullptr) fmt::println("{}", SDL_GetError());
-        // get the format of the device (sample rate and such)
-        SDL_AudioSpec device_format;
-        SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_format, nullptr);
-        // set up the audio stream to convert from our .wav file sample rate to the device's sample rate
-        if(!SDL_SetAudioStreamFormat(audio_stream, &audio_file.spec, &device_format)) fmt::println("{}", SDL_GetError());
-        // load .wav into the audio stream and play
-        if(!SDL_PutAudioStreamData(audio_stream, audio_file.buffer, audio_file.buffer_size)) fmt::println("{}", SDL_GetError());
-        if(!SDL_ResumeAudioStreamDevice(audio_stream)) fmt::println("{}", SDL_GetError());
+    void play_audio(const char* path) {
+        SDL_AudioSpec file_spec;
+        Uint8* file_buffer;
+        Uint32 file_length;
+    
+        if (!SDL_LoadWAV(path, &file_spec, &file_buffer, &file_length)) {
+            return;
+        }
+    
+        SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr, nullptr, nullptr);
+        if (!stream) {
+            SDL_free(file_buffer);
+            return;
+        }
+    
+        // Configurar formato del stream
+        SDL_AudioSpec device_spec;
+        SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_spec, nullptr);
+        if (SDL_SetAudioStreamFormat(stream, &file_spec, &device_spec) < 0) {
+            SDL_free(file_buffer);
+            SDL_DestroyAudioStream(stream);
+            return;
+        }
+    
+        // Enviar datos al stream
+        if (SDL_PutAudioStreamData(stream, file_buffer, file_length) < 0) {
+        }
+        SDL_free(file_buffer);
+    
+        // Iniciar reproducción
+        SDL_ResumeAudioStreamDevice(stream);
+    
+        // Guardar el stream en la lista activa
+        active_audio_streams.push_back({stream, SDL_GetTicks()});
     }
 
     void update_bullets(float delta_time){
@@ -496,21 +541,17 @@ struct Engine {
     void update_boss(float delta_time) {
         if (_boss._state == Enemy::State::ALIVE && _boss_spawned) {
             _boss.update(delta_time, _player);
-            // Obtener la posición actual del boss
-            glm::vec3 boss_position = _boss.get_position();
-
-            // Calcular la dirección hacia adelante basado en la rotación Y del boss
-            float angle = _boss._model._transform._rotation.y;  // Rotación en radianes
-            glm::vec3 forward = glm::vec3(glm::sin(angle), 0.0f, glm::cos(angle));
-
-            // Calcular nueva posición de la luz
-            glm::vec3 light_offset = forward * 3.f; // Mueve la luz 1.5 unidades al frente
-            light_offset.y += 1.5f; // Mantiene la luz un poco arriba
-
-            // Asignar la nueva posición de la luz
-            _lights[1]._position = boss_position + light_offset;
-        }
-        else {
+            
+            // Verificar que haya al menos 2 luces (jugador y jefe)
+            if (_lights.size() >= 2) { // <- Añade esta verificación
+                glm::vec3 boss_position = _boss.get_position();
+                float angle = _boss._model._transform._rotation.y;
+                glm::vec3 forward = glm::vec3(glm::sin(angle), 0.0f, glm::cos(angle));
+                glm::vec3 light_offset = forward * 3.f + glm::vec3(0.0f, 1.5f, 0.0f);
+                
+                _lights[1]._position = boss_position + light_offset;
+            }
+        } else {
             _boss_spawn_timer += delta_time;
             if (_boss_spawn_timer >= _boss_spawn_cooldown) {
                 spawn_boss();
@@ -561,6 +602,11 @@ struct Engine {
         std::erase_if(_foods, [](const Food& food) {
             return food._state == Food::State::DEAD;
         });
+
+        std::erase_if(_lights, [](const Light& light) {
+            return light.active == false;
+        });
+
         // draw shadows
         if (_shadows_dirty) {
             // do this for each light
@@ -622,11 +668,32 @@ struct Engine {
         }
         _showing_upgrades = _uiManager.render(_player, width, height, _showing_upgrades, _current_upgrades, _game_timer);
 
+        static Uint64 last_cleanup = 0;
+        Uint64 now = SDL_GetTicks();
+        if (now - last_cleanup > 1000) {
+            auto it = active_audio_streams.begin();
+            while (it != active_audio_streams.end()) {
+                // Verificar si el audio ha terminado
+                if (SDL_GetAudioStreamQueued(it->stream) <= 0) {
+                    SDL_DestroyAudioStream(it->stream);
+                    it = active_audio_streams.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            last_cleanup = now;
+        }
     }
 
     void check_game_over(){
-        if (_game_timer >= 600) _gameState = GameState::WIN;
-        if (_player._hp <= 0) _gameState = GameState::GAME_OVER;
+        if (_game_timer >= 600){
+            play_audio("../assets/audio/win.wav");
+            _gameState = GameState::WIN;
+        }
+        if (_player._hp <= 0){
+            play_audio("../assets/audio/game_over.wav");
+            _gameState = GameState::GAME_OVER;
+        } 
     }
 
     void execute_frame() {
@@ -647,7 +714,7 @@ struct Engine {
                  _uiManager.render_over_menu(_gameState, width, height);
                 break;
             case GameState::WIN:
-                _uiManager.render_over_menu(_gameState, width, height);
+                _uiManager.render_win_menu(_gameState, width, height);
                 break;
 
             case GameState::EXIT:
@@ -685,13 +752,13 @@ struct Engine {
     const float _spawn_time = 3.0f;
     float time_since_last_shot = 0.0f;
     float _boss_spawn_timer = 0.0f;
-    const float _boss_spawn_cooldown = 60.0f;
+    const float _boss_spawn_cooldown = 70.0f;
     bool _boss_spawned = false;
     std::vector<Upgrade> _current_upgrades;
     bool _showing_upgrades = false;
     float _game_timer = 0.0f;
     float _difficulty_timer = 0.0f;    // Tracks time since last difficulty increase
-    const float _difficulty_interval = 20.0f; // Time interval (1 min) to increase difficulty
+    const float _difficulty_interval = 70.0f; // Time interval (1 min) to increase difficulty
     int difficulty = 1; 
 
     // other
@@ -710,5 +777,13 @@ struct Engine {
     };
     AudioFile audio_file;
     SDL_AudioStream* audio_stream;
+
+    struct ActiveAudio {
+        SDL_AudioStream* stream;
+        Uint64 start_time;
+    };
+    std::vector<ActiveAudio> active_audio_streams;
+
+
 };
 
