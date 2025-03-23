@@ -37,7 +37,6 @@ struct Engine {
         glm::vec3 rotation(-glm::radians(70.0f), glm::radians(180.0f), 0.0f);
         _camera._rotation = rotation;
 
-
         // create pipeline for textured objects
         _pipeline.init("../assets/shaders/default.vert", "../assets/shaders/default.frag");
         _pipeline_shadows.init("../assets/shaders/shadows.vert", "../assets/shaders/shadows.frag");
@@ -175,12 +174,8 @@ struct Engine {
                 inv_view
         );
         }
-
-        // _enemy.update(delta_time, _player.get_position());
         _camera._position = _player.get_position() + offset;
         _lights[0]._position = _player.get_position() + glm::vec3(0.0f, 1.0f, 1.0f);
-        
-        //_player._model.look_at(_terrain[0]._transform._position);
 
         // Process input
         Input::flush();
@@ -203,10 +198,10 @@ struct Engine {
         _enemies.emplace_back();
         Enemy& new_enemy = _enemies.back();
         
-        // Copiar modelo del pool
+        // Copy models
         new_enemy._model = _model_pool[config.model_key];
         
-        // Configurar propiedades
+        // Configure enemy
         new_enemy.init_from_config(config, difficulty);
         new_enemy._model._transform._scale = glm::vec3(0.5f);
         new_enemy.set_position(position);
@@ -265,13 +260,12 @@ struct Engine {
     Upgrade select_random_upgrade(const std::vector<Upgrade>& upgrades){
         static std::random_device rd;
         static std::mt19937 rng(rd());
-        // Sistema de ponderación por rareza
+        // Rarity syste
         std::vector<float> weights;
         for(const auto& upgrade : upgrades) {
             weights.push_back(get_rarity_weight(upgrade.rarity));
         }
                 
-        // Selección aleatoria ponderada
         std::discrete_distribution<> dist(weights.begin(), weights.end());
         return upgrades[dist(rng)];
     }
@@ -291,7 +285,6 @@ struct Engine {
 
         };
         
-        // Seleccionar 3 aleatorias con ponderación por rareza
         for(int i = 0; i < 3; ++i) {
             _current_upgrades.push_back(select_random_upgrade(all_upgrades));
         }
@@ -371,8 +364,6 @@ struct Engine {
             else {                      // 15% blob
                 type = EnemyType::BLOB;
             }
-
-            // Crea el enemigo
             create_enemy(type, spawn_pos);
         }
     }
@@ -395,7 +386,7 @@ struct Engine {
             
             if (check_sphere_collision(player_pos, player_radius, 
                                       enemy_pos, enemy_radius)) {
-                // Daño recíproco
+                // Both die
                 _player.take_damage(enemy._damage);
                 play_audio("../assets/audio/contact.wav");
                 enemy.die();
@@ -489,7 +480,6 @@ struct Engine {
             return;
         }
     
-        // Configurar formato del stream
         SDL_AudioSpec device_spec;
         SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_spec, nullptr);
         if (SDL_SetAudioStreamFormat(stream, &file_spec, &device_spec) < 0) {
@@ -498,15 +488,12 @@ struct Engine {
             return;
         }
     
-        // Enviar datos al stream
         if (SDL_PutAudioStreamData(stream, file_buffer, file_length) < 0) {
         }
         SDL_free(file_buffer);
     
-        // Iniciar reproducción
         SDL_ResumeAudioStreamDevice(stream);
     
-        // Guardar el stream en la lista activa
         active_audio_streams.push_back({stream, SDL_GetTicks()});
     }
 
@@ -522,7 +509,6 @@ struct Engine {
             
             glm::vec3 direction = glm::normalize(_player.get_mouse_world_position() - _player.get_position());
 
-            // Configurar propiedades
             new_projectile.init(_player.get_position(), direction, _player._bullet_speed, _player._damage, _player._piercing_strength);
             play_audio("../assets/audio/shot.wav");
         }
@@ -542,8 +528,7 @@ struct Engine {
         if (_boss._state == Enemy::State::ALIVE && _boss_spawned) {
             _boss.update(delta_time, _player);
             
-            // Verificar que haya al menos 2 luces (jugador y jefe)
-            if (_lights.size() >= 2) { // <- Añade esta verificación
+            if (_lights.size() >= 2) { // Stop crashing by lights vector
                 glm::vec3 boss_position = _boss.get_position();
                 float angle = _boss._model._transform._rotation.y;
                 glm::vec3 forward = glm::vec3(glm::sin(angle), 0.0f, glm::cos(angle));
@@ -581,8 +566,7 @@ struct Engine {
             _difficulty_timer = 0;
         }
 
-
-        // Actualizar enemigos
+        // Update enemies
         for (auto& enemy : _enemies) {
             enemy.update(delta_time, _player);
         }
@@ -590,7 +574,7 @@ struct Engine {
         update_bullets(delta_time);
         check_collisions();
         
-        // Eliminar enemigos muertos
+        // Eliminate all inactive objects
         std::erase_if(_enemies, [](const Enemy& enemy) {
             return enemy._state == Enemy::State::DEAD;
         });
@@ -646,6 +630,7 @@ struct Engine {
                 _lights[i].bind_read(i + 1, i * 3);
             }
             for (auto& model: _terrain) model.draw(false);
+            // Send time to move the enemies in a wave-like motion
             glUniform1f(0, Time::get_total());
             _camera.bind();
             // draw the stuff
@@ -673,7 +658,7 @@ struct Engine {
         if (now - last_cleanup > 1000) {
             auto it = active_audio_streams.begin();
             while (it != active_audio_streams.end()) {
-                // Verificar si el audio ha terminado
+                // Verify if auidio stream is still playing
                 if (SDL_GetAudioStreamQueued(it->stream) <= 0) {
                     SDL_DestroyAudioStream(it->stream);
                     it = active_audio_streams.erase(it);
@@ -742,7 +727,7 @@ struct Engine {
     std::vector<Food> _foods; 
     UIManager _uiManager;
     //Enemy _enemy;
-    glm::vec3 offset = glm::vec3(-0.5f, 19.0f, -7.0f); // Offset con un desplazamiento en X
+    glm::vec3 offset = glm::vec3(-0.5f, 19.0f, -7.0f);
     
     std::unordered_map<std::string, Model> _model_pool;
     std::unordered_map<EnemyType, EnemyConfig> _enemy_configs;
